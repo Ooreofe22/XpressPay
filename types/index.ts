@@ -84,3 +84,13 @@ export interface Beneficiary {
   bankName: string
   bankCode: string
 }
+
+export interface BillBeneficiary {
+  id: string
+  billerUniqueCode: string
+  billerName: string
+  categoryPath: string
+  accountNumber: string
+  accountType?: string
+  label: string
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState } from 'react'
-import { User, Transaction, BankContact, Card } from '@/types'
+import { User, Transaction, BankContact, Card, BillBeneficiary } from '@/types'
 import {
   submitBvn as apiSubmitBvn,
   requestSignupOtp as apiRequestSignupOtp,
@@ -12,16 +12,19 @@ import {
   fetchWalletAccounts,
   TokenResponse,
 } from '@/lib/auth-api'
+import { fetchBillPaymentHistory } from '@/lib/api'
 import { setOrValidateLocalPin, isFirstTimePinForPhone } from '@/lib/localPin'
 
 type AuthScreen =
-  | 'splash'
-  | 'login-phone'
-  | 'login-otp'
-  | 'login-welcome'
-  | 'signup-bvn'
-  | 'signup-otp'
-  | 'dashboard'
+    | 'splash'
+    | 'login-phone'
+    | 'login-otp'
+    | 'login-welcome'
+    | 'signup-bvn'
+    | 'signup-otp'
+    | 'dashboard'
+
+type BillsTab = 'bills' | 'transactions'
 
 interface AppContextType {
   user: User | null
@@ -50,47 +53,26 @@ interface AppContextType {
   logout: () => void
   addTransaction: (transaction: Transaction) => void
   transactions: Transaction[]
+  refreshTransactionHistory: () => Promise<void>
   bankContacts: BankContact[]
   addBankContact: (contact: BankContact) => void
   cards: Card[]
   addCard: (card: Card) => void
   currentTab: 'home' | 'pay' | 'cards' | 'profile'
   setCurrentTab: (tab: 'home' | 'pay' | 'cards' | 'profile') => void
+
+  // Bills sub-tab — lets HomeScreen's "See all" deep-link straight into
+  // BillsScreen's Transactions tab instead of always landing on Pay Bills
+  billsActiveTab: BillsTab
+  setBillsActiveTab: (tab: BillsTab) => void
+
+  // Reusable saved recipients for bill payments (meter/smartcard/phone number
+  // per biller), separate from BankContact which is for bank transfers
+  billerBeneficiaries: BillBeneficiary[]
+  addBillerBeneficiary: (beneficiary: BillBeneficiary) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
-
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'sent',
-    recipient: 'Amara Nwosu',
-    amount: 5000,
-    description: 'Transfer to Amara',
-    timestamp: new Date(Date.now() - 3600000),
-    status: 'completed',
-    reference: 'TX001',
-  },
-  {
-    id: '2',
-    type: 'payment',
-    amount: 2500,
-    description: 'MTN Airtime Purchase',
-    timestamp: new Date(Date.now() - 86400000),
-    status: 'completed',
-    reference: 'TX002',
-  },
-  {
-    id: '3',
-    type: 'received',
-    recipient: 'Blessing Okoro',
-    amount: 15000,
-    description: 'Payment received',
-    timestamp: new Date(Date.now() - 172800000),
-    status: 'completed',
-    reference: 'TX003',
-  },
-]
 
 const mockCards: Card[] = [
   {
@@ -105,32 +87,15 @@ const mockCards: Card[] = [
   },
 ]
 
-const mockBankContacts: BankContact[] = [
-  {
-    id: '1',
-    name: 'Amara Nwosu',
-    accountNumber: '1234567891',
-    bankName: 'Zenith Bank',
-    bankCode: '011',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara',
-  },
-  {
-    id: '2',
-    name: 'Blessing Okoro',
-    accountNumber: '1234567892',
-    bankName: 'First Bank',
-    bankCode: '011',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=blessing',
-  },
-]
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [authScreen, setAuthScreen] = useState<AuthScreen>('splash')
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions)
-  const [bankContacts, setBankContacts] = useState<BankContact[]>(mockBankContacts)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [bankContacts, setBankContacts] = useState<BankContact[]>([])
   const [cards, setCards] = useState<Card[]>(mockCards)
   const [currentTab, setCurrentTab] = useState<'home' | 'pay' | 'cards' | 'profile'>('home')
+  const [billsActiveTab, setBillsActiveTab] = useState<BillsTab>('bills')
+  const [billerBeneficiaries, setBillerBeneficiaries] = useState<BillBeneficiary[]>([])
 
   // mid-flow state — not persisted, cleared once completeLogin() finishes
   const [pendingPhone, setPendingPhone] = useState<string | null>(null)
@@ -222,6 +187,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setPendingPhone(null)
     setPendingBvn(null)
     setAuthScreen('dashboard')
+
+    // Fire-and-forget: populate real bill payment history now that we're
+    // authenticated. Not awaited so login doesn't stall on this network call —
+    // the dashboard will re-render once it resolves.
+    refreshTransactionHistory()
   }
 
   const logout = () => {
@@ -235,13 +205,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTransactions((prev) => [transaction, ...prev])
     if (transaction.type === 'sent') {
       setUser((prev) =>
-        prev
-          ? {
-              ...prev,
-              accountBalance: prev.accountBalance - transaction.amount,
-            }
-          : null
+          prev
+              ? {
+                ...prev,
+                accountBalance: prev.accountBalance - transaction.amount,
+              }
+              : null
       )
+    }
+  }
+
+  // GET /billers/payments/history — replaces whatever's in `transactions` with
+  // the real history from the backend. Safe to call repeatedly (login, after a
+  // completed payment, manual refresh) since it's just a read.
+  const refreshTransactionHistory = async () => {
+    try {
+      const history = await fetchBillPaymentHistory()
+      setTransactions(history)
+    } catch (err) {
+      console.error('Could not refresh transaction history:', err)
     }
   }
 
@@ -253,34 +235,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCards((prev) => [card, ...prev])
   }
 
+  const addBillerBeneficiary = (beneficiary: BillBeneficiary) => {
+    setBillerBeneficiaries((prev) => {
+      // avoid duplicate entries for the same biller + account number
+      const exists = prev.some(
+          (b) => b.billerUniqueCode === beneficiary.billerUniqueCode && b.accountNumber === beneficiary.accountNumber
+      )
+      if (exists) return prev
+      return [beneficiary, ...prev]
+    })
+  }
+
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        isAuthenticated: user !== null,
-        authScreen,
-        setAuthScreen,
-        pendingPhone,
-        isSettingNewPin,
-        requestSignupOtp,
-        resendSignupOtp,
-        verifySignupOtp,
-        requestLoginOtp,
-        verifyLoginOtp,
-        completeLogin,
-        logout,
-        addTransaction,
-        transactions,
-        bankContacts,
-        addBankContact,
-        cards,
-        addCard,
-        currentTab,
-        setCurrentTab,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+      <AppContext.Provider
+          value={{
+            user,
+            isAuthenticated: user !== null,
+            authScreen,
+            setAuthScreen,
+            pendingPhone,
+            isSettingNewPin,
+            requestSignupOtp,
+            resendSignupOtp,
+            verifySignupOtp,
+            requestLoginOtp,
+            verifyLoginOtp,
+            completeLogin,
+            logout,
+            addTransaction,
+            transactions,
+            refreshTransactionHistory,
+            bankContacts,
+            addBankContact,
+            cards,
+            addCard,
+            currentTab,
+            setCurrentTab,
+            billsActiveTab,
+            setBillsActiveTab,
+            billerBeneficiaries,
+            addBillerBeneficiary,
+          }}
+      >
+        {children}
+      </AppContext.Provider>
   )
 }
 
