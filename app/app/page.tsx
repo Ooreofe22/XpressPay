@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { AppProvider, useApp } from '@/context/AppContext'
+import { useApp } from '@/context/AppContext'
 import { SplashScreen } from '@/components/auth/SplashScreen'
 import { LoginPhoneScreen } from '@/components/auth/LoginPhoneScreen'
 import { LoginOTPScreen } from '@/components/auth/LoginOTPScreen'
@@ -15,7 +15,7 @@ import { BillsScreen } from '@/components/screens/BillsScreen'
 import { CardsScreen } from '@/components/screens/CardsScreen'
 import { ProfileScreen } from '@/components/screens/ProfileScreen'
 
-function AppContent() {
+export default function AppPage() {
     const { isAuthenticated, currentTab, authScreen, rehydrating } = useApp()
 
     // Wait for the mount-time session check to finish before deciding whether
@@ -51,13 +51,5 @@ function AppContent() {
                 <BottomNavigation />
             </div>
         </>
-    )
-}
-
-export default function AppPage() {
-    return (
-        <AppProvider>
-            <AppContent />
-        </AppProvider>
     )
 }
