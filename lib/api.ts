@@ -86,11 +86,16 @@ export function initiateBillerCheckout(payload: {
  * redirect returns. Actively triggers server-side confirmation (safe to call
  * even if the webhook already handled it) and returns the resulting status.
  */
-export function verifyBillerPayment(reference: string): Promise<Transaction> {
-  return apiFetch<Transaction>(`/billers/payments/verify/${reference}`)
+function toTransaction(raw: any): Transaction {
+  return { ...raw, timestamp: new Date(raw.timestamp) }
 }
 
-/** GET /billers/payments/history — requires auth. */
-export function fetchBillPaymentHistory(): Promise<Transaction[]> {
-  return apiFetch<Transaction[]>('/billers/payments/history')
+export async function verifyBillerPayment(reference: string): Promise<Transaction> {
+  const raw = await apiFetch<Transaction>(`/billers/payments/verify/${reference}`)
+  return toTransaction(raw)
+}
+
+export async function fetchBillPaymentHistory(): Promise<Transaction[]> {
+  const raw = await apiFetch<Transaction[]>('/billers/payments/history')
+  return raw.map(toTransaction)
 }
