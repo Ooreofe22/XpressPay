@@ -24,7 +24,6 @@ export interface TokenResponse {
   phone: string
 }
 
-// -- Signup --
 export function submitBvn(bvn: string): Promise<{ valid: boolean }> {
   return authFetch('/auth/signup/bvn', { method: 'POST', body: JSON.stringify({ bvn }) })
 }
@@ -40,7 +39,6 @@ export function verifySignupOtp(phone: string, bvn: string, otp: string): Promis
   })
 }
 
-// -- Login --
 export function requestLoginOtp(phone: string): Promise<{ message: string }> {
   return authFetch('/auth/login/request-otp', { method: 'POST', body: JSON.stringify({ phone }) })
 }
@@ -49,13 +47,16 @@ export function verifyLoginOtp(phone: string, otp: string): Promise<TokenRespons
   return authFetch('/auth/login/verify-otp', { method: 'POST', body: JSON.stringify({ phone, otp }) })
 }
 
-// -- Wallet (used right after PIN confirms, to build the User object for display) --
+export function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+  return authFetch('/auth/refresh', { method: 'POST', body: JSON.stringify({ refreshToken }) })
+}
+
 export function fetchWalletBalance(accessToken: string): Promise<{ balance: number; currency: string }> {
   return authFetch('/wallet/balance', { headers: { Authorization: `Bearer ${accessToken}` } })
 }
 
 export function fetchWalletAccounts(
-  accessToken: string
+    accessToken: string
 ): Promise<{ bankName: string; accountNumber: string; accountName: string }[]> {
   return authFetch('/wallet/accounts', { headers: { Authorization: `Bearer ${accessToken}` } })
 }

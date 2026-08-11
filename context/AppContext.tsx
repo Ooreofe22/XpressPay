@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Transaction, BankContact, Card, BillBeneficiary } from '@/types'
 import {
   submitBvn as apiSubmitBvn,
@@ -10,6 +10,7 @@ import {
   verifyLoginOtp as apiVerifyLoginOtp,
   fetchWalletBalance,
   fetchWalletAccounts,
+  refreshAccessToken,
   TokenResponse,
 } from '@/lib/auth-api'
 import { fetchBillPaymentHistory } from '@/lib/api'
@@ -31,6 +32,12 @@ interface AppContextType {
   isAuthenticated: boolean
   authScreen: AuthScreen
   setAuthScreen: (screen: AuthScreen) => void
+
+  // true while we're attempting to restore a session from localStorage on
+  // first mount (e.g. after redirecting back from Paystack). Screens that
+  // gate on isAuthenticated should wait for this to go false before
+  // redirecting to login, or they'll bounce a valid session for a frame.
+  rehydrating: boolean
 
   // phone currently mid-flow (set by SignUpBVN/LoginPhoneScreen, read by the OTP + PIN screens)
   pendingPhone: string | null
@@ -102,7 +109,92 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [pendingBvn, setPendingBvn] = useState<string | null>(null)
   const [pendingTokens, setPendingTokens] = useState<TokenResponse | null>(null)
 
+  // true until the mount-time rehydration attempt below finishes (success,
+  // failure, or "nothing to restore") — see rehydrate() effect
+  const [rehydrating, setRehydrating] = useState(true)
+
   const isSettingNewPin = pendingPhone ? isFirstTimePinForPhone(pendingPhone) : true
+
+  // -- Session rehydration --
+  //
+  // A full-page navigation to Paystack (or any hard reload) wipes all React
+  // state, including `user`. Tokens survive in localStorage, but nothing was
+  // reading them back out on mount — so the app always came back up as
+  // logged-out, even with valid tokens sitting right there. This effect
+  // reconstructs `user` from the stored access token (decoding its payload
+  // for id/phone, then re-fetching wallet data) and falls back to
+  // /auth/refresh if the access token has expired (15 min lifetime).
+
+  useEffect(() => {
+    const rehydrate = async () => {
+      let accessToken = localStorage.getItem('payxpress_access_token')
+      const refreshToken = localStorage.getItem('payxpress_refresh_token')
+
+      if (!accessToken || !refreshToken) {
+        setRehydrating(false)
+        return
+      }
+
+      const claims = decodeJwtPayload(accessToken)
+      if (!claims) {
+        // token is malformed/unreadable — nothing salvageable
+        localStorage.removeItem('payxpress_access_token')
+        localStorage.removeItem('payxpress_refresh_token')
+        setRehydrating(false)
+        return
+      }
+
+      try {
+        const [walletBalance, walletAccounts] = await Promise.all([
+          fetchWalletBalance(accessToken),
+          fetchWalletAccounts(accessToken),
+        ])
+        applyRehydratedUser(claims, walletBalance, walletAccounts)
+      } catch {
+        // likely an expired access token — refresh once and retry, otherwise give up
+        try {
+          const refreshed = await refreshAccessToken(refreshToken)
+          accessToken = refreshed.accessToken
+          localStorage.setItem('payxpress_access_token', accessToken)
+
+          const [walletBalance, walletAccounts] = await Promise.all([
+            fetchWalletBalance(accessToken),
+            fetchWalletAccounts(accessToken),
+          ])
+          applyRehydratedUser(claims, walletBalance, walletAccounts)
+        } catch {
+          localStorage.removeItem('payxpress_access_token')
+          localStorage.removeItem('payxpress_refresh_token')
+        }
+      }
+
+      setRehydrating(false)
+    }
+
+    rehydrate()
+    // run once on mount only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const applyRehydratedUser = (
+      claims: { sub: string; phone: string },
+      walletBalance: { balance: number },
+      walletAccounts: { accountNumber: string }[]
+  ) => {
+    const newUser: User = {
+      id: claims.sub,
+      name: `User ${claims.phone.slice(-4)}`, // placeholder — backend collects no name
+      email: `${claims.phone}@payxpress.ng`, // placeholder, matches backend's Paystack email convention
+      phone: claims.phone,
+      accountNumber: walletAccounts[0]?.accountNumber ?? '—',
+      accountBalance: walletBalance.balance,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${claims.phone}`,
+      kyc: { verified: true, level: 'bronze' },
+    }
+    setUser(newUser)
+    setAuthScreen('dashboard')
+    refreshTransactionHistory()
+  }
 
   // -- Signup --
 
@@ -253,6 +345,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             isAuthenticated: user !== null,
             authScreen,
             setAuthScreen,
+            rehydrating,
             pendingPhone,
             isSettingNewPin,
             requestSignupOtp,
@@ -286,6 +379,21 @@ function normalizePhone(rawPhone: string): string {
   let digits = rawPhone.replace(/\D/g, '')
   if (digits.startsWith('0')) digits = digits.slice(1)
   return digits.startsWith('234') ? `+${digits}` : `+234${digits}`
+}
+
+// Reads the payload (2nd segment) of a JWT without verifying its signature.
+// Safe here because it's only used to pre-fill display data (id, phone) —
+// every real request still goes through the backend's JwtAuthFilter, which
+// verifies the signature server-side. Returns null if the token is malformed.
+function decodeJwtPayload(token: string): { sub: string; phone: string } | null {
+  try {
+    const payload = token.split('.')[1]
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const json = atob(base64)
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
 }
 
 export function useApp() {

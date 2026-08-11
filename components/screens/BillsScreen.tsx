@@ -175,7 +175,7 @@ export function BillsScreen() {
   const [selectedBiller, setSelectedBiller] = useState<Biller | null>(null)
   const [prefillAccountNumber, setPrefillAccountNumber] = useState('')
   const [prefillAccountType, setPrefillAccountType] = useState<
-    'prepaid' | 'postpaid' | undefined
+      'prepaid' | 'postpaid' | undefined
   >(undefined)
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
   const [refreshingHistory, setRefreshingHistory] = useState(false)
@@ -186,6 +186,17 @@ export function BillsScreen() {
         .catch((err) => setError(err instanceof Error ? err.message : 'Could not load billers'))
         .finally(() => setLoading(false))
   }, [])
+
+  // Refetch bill payment history every time the Transactions tab becomes
+  // active — without this, a payment made earlier in the session (or
+  // completed via redirect back from Paystack) never shows up here until
+  // the user hits the manual Refresh button, even though it's already
+  // saved on the backend.
+  useEffect(() => {
+    if (billsActiveTab === 'transactions') {
+      refreshTransactionHistory()
+    }
+  }, [billsActiveTab])
 
   const query = searchQuery.trim().toLowerCase()
   const filtered = query ? billers.filter((b) => b.name.toLowerCase().includes(query)) : billers

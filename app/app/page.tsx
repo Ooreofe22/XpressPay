@@ -16,40 +16,48 @@ import { CardsScreen } from '@/components/screens/CardsScreen'
 import { ProfileScreen } from '@/components/screens/ProfileScreen'
 
 function AppContent() {
-  const { isAuthenticated, currentTab, authScreen } = useApp()
+    const { isAuthenticated, currentTab, authScreen, rehydrating } = useApp()
 
-  if (!isAuthenticated) {
+    // Wait for the mount-time session check to finish before deciding whether
+    // to show login or dashboard — otherwise this renders the login screen for
+    // a frame on every reload (or every redirect back from Paystack), even
+    // when the stored token is still valid.
+    if (rehydrating) {
+        return <SplashScreen />
+    }
+
+    if (!isAuthenticated) {
+        return (
+            <>
+                {authScreen === 'splash' && <SplashScreen />}
+                {authScreen === 'login-phone' && <LoginPhoneScreen />}
+                {authScreen === 'login-otp' && <LoginOTPScreen />}
+                {authScreen === 'login-welcome' && <WelcomeBackScreen />}
+                {authScreen === 'signup-bvn' && <SignUpBVN />}
+                {authScreen === 'signup-otp' && <SignUpOTP />}
+            </>
+        )
+    }
+
     return (
-      <>
-        {authScreen === 'splash' && <SplashScreen />}
-        {authScreen === 'login-phone' && <LoginPhoneScreen />}
-        {authScreen === 'login-otp' && <LoginOTPScreen />}
-        {authScreen === 'login-welcome' && <WelcomeBackScreen />}
-        {authScreen === 'signup-bvn' && <SignUpBVN />}
-        {authScreen === 'signup-otp' && <SignUpOTP />}
-      </>
+        <>
+            <AppShell>
+                {currentTab === 'home' && <HomeScreen />}
+                {currentTab === 'pay' && <BillsScreen />}
+                {currentTab === 'cards' && <CardsScreen />}
+                {currentTab === 'profile' && <ProfileScreen />}
+            </AppShell>
+            <div className="md:hidden">
+                <BottomNavigation />
+            </div>
+        </>
     )
-  }
-
-  return (
-    <>
-      <AppShell>
-        {currentTab === 'home' && <HomeScreen />}
-        {currentTab === 'pay' && <BillsScreen />}
-        {currentTab === 'cards' && <CardsScreen />}
-        {currentTab === 'profile' && <ProfileScreen />}
-      </AppShell>
-      <div className="md:hidden">
-        <BottomNavigation />
-      </div>
-    </>
-  )
 }
 
 export default function AppPage() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  )
+    return (
+        <AppProvider>
+            <AppContent />
+        </AppProvider>
+    )
 }
