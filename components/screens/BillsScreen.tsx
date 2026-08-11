@@ -139,27 +139,30 @@ const BeneficiariesCard: React.FC<{
       <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
         <p className="font-bold text-foreground text-sm mb-4">Beneficiaries</p>
         <div className="space-y-1">
-          {beneficiaries.map((b) => (
-              <button
-                  key={b.id}
-                  onClick={() => onSelect(b)}
-                  className="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-secondary/50 transition-colors"
-              >
+          {beneficiaries.map((b) => {
+            const displayName = b.billerName || b.label || b.billerUniqueCode
+            return (
+                <button
+                    key={b.id}
+                    onClick={() => onSelect(b)}
+                    className="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-secondary/50 transition-colors"
+                >
             <span
                 className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-[11px]"
-                style={{ backgroundColor: providerColor(b.billerName) }}
+                style={{ backgroundColor: providerColor(displayName) }}
             >
-              {initialsOf(b.billerName)}
+              {initialsOf(displayName)}
             </span>
-                <div className="text-left min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {b.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{b.billerName}</p>
-                </div>
-                <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />
-              </button>
-          ))}
+                  <div className="text-left min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {b.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{displayName}</p>
+                  </div>
+                  <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />
+                </button>
+            )
+          })}
         </div>
       </div>
   )
