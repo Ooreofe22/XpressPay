@@ -17,11 +17,11 @@ interface BillPaymentFlowProps {
 type FlowStep = 'details' | 'confirm' | 'redirecting'
 
 export function BillPaymentFlow({
-  biller,
-  onClose,
-  initialAccountNumber,
-  initialAccountType,
-}: BillPaymentFlowProps) {
+                                  biller,
+                                  onClose,
+                                  initialAccountNumber,
+                                  initialAccountType,
+                                }: BillPaymentFlowProps) {
   const { addBillerBeneficiary } = useApp()
   const isElectricity = biller.categoryPath === 'electricity'
   const isCable = biller.categoryPath === 'cable'
@@ -31,7 +31,7 @@ export function BillPaymentFlow({
   const [step, setStep] = useState<FlowStep>('details')
   const [accountNumber, setAccountNumber] = useState(!isAirtimeOrData ? initialAccountNumber ?? '' : '')
   const [accountType, setAccountType] = useState<'prepaid' | 'postpaid'>(
-    initialAccountType ?? 'prepaid'
+      initialAccountType ?? 'prepaid'
   )
   const [noOfMonth, setNoOfMonth] = useState(1)
   const [phoneNumber, setPhoneNumber] = useState(isAirtimeOrData ? initialAccountNumber ?? '' : '')
@@ -106,19 +106,29 @@ export function BillPaymentFlow({
 
       const identifier = isAirtimeOrData ? phoneNumber : accountNumber
       const label = validatedName || `${biller.name} • ${identifier}`
+
+      // Must await this — it fires a POST to the backend. Without awaiting,
+      // the window.location.href redirect below fires immediately and cancels
+      // the in-flight request before the server ever receives it, which is
+      // why beneficiaries weren't persisting even though this code "ran".
       if (saveAsBeneficiary) {
-        addBillerBeneficiary({
-          id:
-              typeof crypto !== 'undefined' && 'randomUUID' in crypto
-                  ? crypto.randomUUID()
-                  : `${biller.uniqueCode}-${identifier}-${Date.now()}`,
-          billerUniqueCode: biller.uniqueCode,
-          billerName: biller.name,
-          categoryPath: biller.categoryPath,
-          accountNumber: identifier,
-          accountType: isElectricity ? accountType : undefined,
-          label,
-        })
+        try {
+          await addBillerBeneficiary({
+            id:
+                typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                    ? crypto.randomUUID()
+                    : `${biller.uniqueCode}-${identifier}-${Date.now()}`,
+            billerUniqueCode: biller.uniqueCode,
+            billerName: biller.name,
+            billerCategoryPath: biller.categoryPath,
+            accountNumber: identifier,
+            accountType: isElectricity ? accountType : undefined,
+            label,
+          })
+        } catch (err) {
+          // don't block the payment redirect if saving the beneficiary fails
+          console.error('Could not save beneficiary:', err)
+        }
       }
 
       setStep('redirecting')

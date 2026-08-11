@@ -214,7 +214,7 @@ export function BillsScreen() {
         (b) => b.uniqueCode === beneficiary.billerUniqueCode
     )
     if (!biller) return
-    setPrefillAccountNumber(beneficiary.accountNumber)
+    setPrefillAccountNumber(beneficiary.accountNumber ?? '')
     setPrefillAccountType(
         beneficiary.accountType as 'prepaid' | 'postpaid' | undefined
     )
