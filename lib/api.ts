@@ -1,4 +1,4 @@
-import type { Biller, BillerValidateResult, BillCheckoutResponse, Transaction } from '@/types'
+import type { Biller, BillerValidateResult, BillCheckoutResponse, Transaction, BillBeneficiary } from '@/types'
 
 const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend-production.up.railway.app').replace(/\/+$/, '')
 
@@ -98,4 +98,31 @@ export async function verifyBillerPayment(reference: string): Promise<Transactio
 export async function fetchBillPaymentHistory(): Promise<Transaction[]> {
   const raw = await apiFetch<Transaction[]>('/billers/payments/history')
   return raw.map(toTransaction)
+}
+
+/** GET /billers/beneficiaries — saved recipients for the logged-in user. */
+export function fetchBillBeneficiaries(): Promise<BillBeneficiary[]> {
+  return apiFetch<BillBeneficiary[]>('/billers/beneficiaries')
+}
+
+/** POST /billers/beneficiaries — persists a beneficiary and returns it with its real id. */
+export function createBillBeneficiary(payload: {
+  billerUniqueCode: string
+  billerCategoryPath: string
+  label?: string
+  accountNumber?: string
+  phoneNumber?: string
+  accountType?: string
+}): Promise<BillBeneficiary> {
+  return apiFetch<BillBeneficiary>('/billers/beneficiaries', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+/** DELETE /billers/beneficiaries/{id} */
+export function deleteBillBeneficiary(id: string): Promise<{ deleted: boolean }> {
+  return apiFetch<{ deleted: boolean }>(`/billers/beneficiaries/${id}`, {
+    method: 'DELETE',
+  })
 }

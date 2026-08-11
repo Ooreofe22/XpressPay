@@ -89,8 +89,9 @@ export interface BillBeneficiary {
   id: string
   billerUniqueCode: string
   billerName: string
-  categoryPath: string
-  accountNumber: string
+  billerCategoryPath: string
+  accountNumber?: string
   accountType?: string
-  label: string
+  phoneNumber?: string
+  label?: string
 }

@@ -13,7 +13,7 @@ import {
   refreshAccessToken,
   TokenResponse,
 } from '@/lib/auth-api'
-import { fetchBillPaymentHistory } from '@/lib/api'
+import { fetchBillPaymentHistory, fetchBillBeneficiaries, createBillBeneficiary } from '@/lib/api'
 import { setOrValidateLocalPin, isFirstTimePinForPhone } from '@/lib/localPin'
 
 type AuthScreen =
@@ -36,7 +36,7 @@ interface AppContextType {
   // true while we're attempting to restore a session from localStorage on
   // first mount (e.g. after redirecting back from Paystack). Screens that
   // gate on isAuthenticated should wait for this to go false before
-  // redirecting to login, or they'll bounce a valid session for a frame.
+  // redirecting to or they'll bounce a valid session for a frame.
   rehydrating: boolean
 
   // phone currently mid-flow (set by SignUpBVN/LoginPhoneScreen, read by the OTP + PIN screens)
@@ -76,7 +76,8 @@ interface AppContextType {
   // Reusable saved recipients for bill payments (meter/smartcard/phone number
   // per biller), separate from BankContact which is for bank transfers
   billerBeneficiaries: BillBeneficiary[]
-  addBillerBeneficiary: (beneficiary: BillBeneficiary) => void
+  addBillerBeneficiary: (beneficiary: BillBeneficiary) => Promise<void>
+  refreshBillerBeneficiaries: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -194,6 +195,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(newUser)
     setAuthScreen('dashboard')
     refreshTransactionHistory()
+    refreshBillerBeneficiaries()
   }
 
   // -- Signup --
@@ -280,10 +282,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setPendingBvn(null)
     setAuthScreen('dashboard')
 
-    // Fire-and-forget: populate real bill payment history now that we're
-    // authenticated. Not awaited so login doesn't stall on this network call —
-    // the dashboard will re-render once it resolves.
+    // Fire-and-forget: populate real bill payment history and saved
+    // beneficiaries now that we're authenticated. Not awaited so login
+    // doesn't stall on these network calls — the dashboard re-renders once
+    // they resolve.
     refreshTransactionHistory()
+    refreshBillerBeneficiaries()
   }
 
   const logout = () => {
@@ -327,15 +331,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCards((prev) => [card, ...prev])
   }
 
-  const addBillerBeneficiary = (beneficiary: BillBeneficiary) => {
-    setBillerBeneficiaries((prev) => {
-      // avoid duplicate entries for the same biller + account number
-      const exists = prev.some(
-          (b) => b.billerUniqueCode === beneficiary.billerUniqueCode && b.accountNumber === beneficiary.accountNumber
-      )
-      if (exists) return prev
-      return [beneficiary, ...prev]
-    })
+  // GET /billers/beneficiaries — replaces local state with what's actually
+  // persisted server-side. Called on rehydrate/login so a refresh shows the
+  // real saved list instead of an empty array.
+  const refreshBillerBeneficiaries = async () => {
+    try {
+      const beneficiaries = await fetchBillBeneficiaries()
+      setBillerBeneficiaries(beneficiaries)
+    } catch (err) {
+      console.error('Could not refresh beneficiaries:', err)
+    }
+  }
+
+  // Persists to the backend first, then updates local state from the real
+  // server response (real id/createdAt) — no more local-only entries that
+  // vanish on reload. Dedup checks both accountNumber (electricity/cable) and
+  // phoneNumber (airtime/data), since a given beneficiary only ever has one
+  // or the other set.
+  const addBillerBeneficiary = async (beneficiary: BillBeneficiary) => {
+    const exists = billerBeneficiaries.some(
+        (b) =>
+            b.billerUniqueCode === beneficiary.billerUniqueCode &&
+            (b.accountNumber === beneficiary.accountNumber || b.phoneNumber === beneficiary.phoneNumber)
+    )
+    if (exists) return
+
+    const saved = await createBillBeneficiary(beneficiary)
+    setBillerBeneficiaries((prev) => [saved, ...prev])
   }
 
   return (
@@ -368,6 +390,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             setBillsActiveTab,
             billerBeneficiaries,
             addBillerBeneficiary,
+            refreshBillerBeneficiaries,
           }}
       >
         {children}
