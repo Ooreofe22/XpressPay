@@ -41,7 +41,7 @@ export function LandingNav() {
         {/* Desktop CTAs */}
         <div className="hidden items-center gap-2 md:flex">
           <Link
-            href="/app"
+            href="/app?screen=login-phone"
             className="rounded-lg px-3.5 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
           >
             Log in
@@ -82,7 +82,7 @@ export function LandingNav() {
             ))}
             <div className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
               <Link
-                href="/app"
+                href="/app?screen=login-phone"
                 className="rounded-lg border border-border px-4 py-2.5 text-center text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
               >
                 Log in

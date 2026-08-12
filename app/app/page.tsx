@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { SplashScreen } from '@/components/auth/SplashScreen'
 import { LoginPhoneScreen } from '@/components/auth/LoginPhoneScreen'
@@ -16,7 +17,15 @@ import { CardsScreen } from '@/components/screens/CardsScreen'
 import { ProfileScreen } from '@/components/screens/ProfileScreen'
 
 export default function AppPage() {
-    const { isAuthenticated, currentTab, authScreen, rehydrating } = useApp()
+    const { isAuthenticated, currentTab, authScreen, rehydrating, setAuthScreen } = useApp()
+    const searchParams = useSearchParams()
+
+    useEffect(() => {
+        const screen = searchParams.get('screen')
+        if (screen === 'login-phone') {
+            setAuthScreen('login-phone')
+        }
+    }, [searchParams, setAuthScreen])
 
     // Wait for the mount-time session check to finish before deciding whether
     // to show login or dashboard — otherwise this renders the login screen for

@@ -26,19 +26,7 @@ export function SplashScreen() {
         className="absolute -left-32 bottom-0 w-[28rem] h-[28rem] rounded-full border border-white/10"
       />
 
-      {/* Top brand bar */}
-      <header className="relative flex items-center justify-between px-6 sm:px-10 h-20 max-w-6xl mx-auto">
-        <div className="flex items-center gap-2.5">
-          <Logo size="sm" variant="inverse" />
-          <span className="text-white font-bold text-lg tracking-tight">PayXpress</span>
-        </div>
-        <button
-          onClick={() => setAuthScreen('login-phone')}
-          className="text-white/90 text-sm font-semibold hover:text-white transition-colors"
-        >
-          .
-        </button>
-      </header>
+      
 
       {/* Hero */}
       <main className="relative max-w-6xl mx-auto px-6 sm:px-10 flex flex-col items-center text-center pt-10 sm:pt-16 pb-16">
