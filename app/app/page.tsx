@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { SplashScreen } from '@/components/auth/SplashScreen'
@@ -16,8 +16,8 @@ import { BillsScreen } from '@/components/screens/BillsScreen'
 import { CardsScreen } from '@/components/screens/CardsScreen'
 import { ProfileScreen } from '@/components/screens/ProfileScreen'
 
-export default function AppPage() {
-    const { isAuthenticated, currentTab, authScreen, rehydrating, setAuthScreen } = useApp()
+function ScreenParamHandler() {
+    const { setAuthScreen } = useApp()
     const searchParams = useSearchParams()
 
     useEffect(() => {
@@ -26,6 +26,12 @@ export default function AppPage() {
             setAuthScreen('login-phone')
         }
     }, [searchParams, setAuthScreen])
+
+    return null
+}
+
+function AppContent() {
+    const { isAuthenticated, currentTab, authScreen, rehydrating } = useApp()
 
     // Wait for the mount-time session check to finish before deciding whether
     // to show login or dashboard — otherwise this renders the login screen for
@@ -59,6 +65,17 @@ export default function AppPage() {
             <div className="md:hidden">
                 <BottomNavigation />
             </div>
+        </>
+    )
+}
+
+export default function AppPage() {
+    return (
+        <>
+            <Suspense fallback={null}>
+                <ScreenParamHandler />
+            </Suspense>
+            <AppContent />
         </>
     )
 }
