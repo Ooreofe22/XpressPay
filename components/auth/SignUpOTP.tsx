@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
-import { OtpInput, type OtpInputHandle } from '@/components/auth/OtpInput'
+import { OtpInput, type OtpInputRef } from '@/components/auth/OtpInput'
 import { Loader2, MailCheck } from 'lucide-react'
+import { motion } from 'motion/react'
 
 const RESEND_SECONDS = 60
 
@@ -14,7 +14,7 @@ function maskEmail(email: string | null): string {
   const [local, domain] = email.split('@')
   if (!domain) return email
   const shown = local.slice(0, 2)
-  return `${shown}${'•'.repeat(Math.max(local.length - 2, 1))}@${domain}`
+  return `${shown}${'•'.repeat(Math.max(local.length - 2, 2))}@${domain}`
 }
 
 export function SignUpOTP() {
@@ -23,78 +23,77 @@ export function SignUpOTP() {
   const [countdown, setCountdown] = useState(RESEND_SECONDS)
   const [canResend, setCanResend] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const [shake, setShake] = useState(false)
-  const otpRef = useRef<OtpInputHandle>(null)
+  const [resent, setResent] = useState(false)
+  const otpRef = useRef<OtpInputRef>(null)
 
   useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown((c) => c - 1), 1000)
-      return () => clearTimeout(timer)
+    if (countdown <= 0) {
+      setCanResend(true)
+      return
     }
-    setCanResend(true)
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000)
+    return () => clearTimeout(t)
   }, [countdown])
 
-  const handleVerify = async (code?: string) => {
-    const otpString = code ?? otp.join('')
-    if (otpString.length !== 6 || loading) return
-
+  const handleVerify = async (code: string) => {
+    if (code.length !== 6 || loading) return
     setLoading(true)
-    setError('')
+    setError(null)
     try {
-      await verifySignupOtp(otpString)
-      // Account exists server-side now. Hand off to the same screen login uses
-      // to finish authenticating — same component, no signup-specific finish.
+      await verifySignupOtp(code)
+      // Account exists server-side now — hand off to the same PIN screen login uses.
       setAuthScreen('login-welcome')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid code. Please try again.')
       setShake(true)
       setTimeout(() => setShake(false), 500)
-      setOtp(new Array(6).fill(''))
-      otpRef.current?.focus()
+      otpRef.current?.clear()
     } finally {
       setLoading(false)
     }
   }
 
   const handleResend = async () => {
-    if (!pendingEmail) return
+    if (!canResend) return
     setCountdown(RESEND_SECONDS)
     setCanResend(false)
-    setError('')
+    setError(null)
+    setResent(false)
     otpRef.current?.clear()
     try {
       await resendSignupOtp()
+      setResent(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not resend code')
     }
   }
 
-  const expired = error.toLowerCase().includes('expired')
+  const isExpired = Boolean(error && /expire/i.test(error))
 
   return (
     <AuthLayout onBack={() => setAuthScreen('signup-email')} eyebrow="Create account · Step 2 of 2">
-      <div className="space-y-9">
+      <div className="space-y-8">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="space-y-3"
         >
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary-tint px-3 py-1.5 text-xs font-semibold text-primary">
-            <MailCheck size={14} />
-            Check your inbox
+          <span className="inline-flex w-12 h-12 rounded-2xl bg-primary-tint items-center justify-center">
+            <MailCheck size={22} className="text-primary" strokeWidth={2} />
           </span>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Enter your code</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Check your inbox</h1>
           <p className="text-muted-foreground text-sm leading-relaxed text-pretty">
             We sent a 6-digit code to{' '}
             <span className="font-semibold text-foreground">{maskEmail(pendingEmail)}</span>. It
-            expires in 10 minutes.
+            expires in 15 minutes.
           </p>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.08 }}
         >
@@ -105,7 +104,7 @@ export function SignUpOTP() {
             onComplete={handleVerify}
             disabled={loading}
             shake={shake}
-            hasError={Boolean(error)}
+            error={error}
           />
         </motion.div>
 
@@ -116,12 +115,22 @@ export function SignUpOTP() {
             className="text-sm text-destructive font-medium bg-destructive/10 px-4 py-2.5 rounded-lg"
           >
             {error}
-            {expired && canResend && (
-              <button onClick={handleResend} className="ml-1.5 underline font-semibold">
+            {isExpired && canResend && (
+              <button onClick={handleResend} className="ml-1 underline font-semibold">
                 Send a new code
               </button>
             )}
           </motion.div>
+        )}
+
+        {resent && !error && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-sm text-primary font-medium"
+          >
+            A new code is on its way.
+          </motion.p>
         )}
 
         <div>
@@ -143,9 +152,9 @@ export function SignUpOTP() {
         </div>
 
         <motion.button
-          onClick={() => handleVerify()}
-          disabled={otp.join('').length !== 6 || loading}
           whileTap={{ scale: 0.98 }}
+          onClick={() => handleVerify(otp.join(''))}
+          disabled={otp.join('').length !== 6 || loading}
           className="w-full h-13 rounded-xl bg-primary text-primary-foreground font-semibold text-base transition-colors duration-200 hover:bg-primary-dark disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed elevation-1 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 size={18} className="animate-spin" />}

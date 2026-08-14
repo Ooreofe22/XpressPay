@@ -21,12 +21,13 @@ const highlights = [
 
 /**
  * Web-first split-screen shell for all auth screens.
- * Left: persistent brand panel (desktop only). Right: the form content, centered.
+ * Left: persistent brand panel (desktop only). Right: the form content, centered
+ * over the ambient gradient mesh so glass surfaces have something to refract.
  */
 export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* ── Brand panel (desktop) ─────────────────────── */}
+    <div className="min-h-screen flex bg-background ambient-mesh">
+      {/* ── Brand panel (desktop) ────────────────────── */}
       <aside className="relative hidden lg:flex lg:w-[46%] xl:w-[52%] splash-gradient flex-col justify-between p-10 xl:p-14 overflow-hidden">
         <div
           aria-hidden
@@ -38,15 +39,15 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
         />
         <div
           aria-hidden
-          className="absolute -left-32 bottom-[-15%] w-[34rem] h-[34rem] rounded-full bg-white/[0.04] blur-3xl"
+          className="absolute -left-24 -bottom-24 w-[28rem] h-[28rem] rounded-full bg-white/[0.04] blur-3xl"
         />
 
-        <div className="relative z-10 flex items-center gap-2.5">
+        <div className="relative flex items-center gap-2.5">
           <Logo size="sm" variant="inverse" />
           <span className="text-white font-bold text-lg tracking-tight">PayXpress</span>
         </div>
 
-        <div className="relative z-10 max-w-md">
+        <div className="relative max-w-md">
           <motion.h2
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -88,15 +89,15 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
           </ul>
         </div>
 
-        <p className="relative z-10 flex items-center gap-1.5 text-white/55 text-xs">
+        <p className="relative flex items-center gap-1.5 text-white/55 text-xs">
           <ShieldCheck size={14} />
           Licensed by the CBN. Deposits insured by the NDIC.
         </p>
       </aside>
 
-      {/* ── Form column ─────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-h-screen ambient-mesh">
-        <div className="relative z-10 flex items-center justify-between px-5 sm:px-8 h-16 flex-shrink-0">
+      {/* ── Form column ──────────────────────────── */}
+      <div className="relative z-10 flex-1 flex flex-col min-h-screen">
+        <div className="flex items-center justify-between px-5 sm:px-8 h-16 flex-shrink-0">
           {onBack ? (
             <motion.button
               onClick={onBack}
@@ -117,7 +118,7 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
           </div>
         </div>
 
-        <div className="relative z-10 flex-1 flex flex-col justify-center px-5 sm:px-8 pb-10">
+        <div className="flex-1 flex flex-col justify-center px-5 sm:px-8 pb-10">
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
