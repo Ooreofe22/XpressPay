@@ -2,16 +2,6 @@ import type { Biller, BillerValidateResult, BillCheckoutResponse, Transaction, B
 
 const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend-production.up.railway.app').replace(/\/+$/, '')
 
-/**
- * TODO: this reads a token that nothing currently writes. AppContext's login()
- * is still fully mocked (setTimeout + hardcoded passcode check, no real backend
- * call), so there's no real JWT anywhere yet. Once the auth screens are wired to
- * POST /auth/login/verify-otp and /auth/signup/verify-otp for real, store the
- * returned accessToken here — e.g. localStorage.setItem('payxpress_access_token', token)
- * right after issueTokens() returns. Until then, GET /billers works (public),
- * but /billers/validate, /billers/payments/initiate, and /billers/payments/history
- * will all 401 since they require a real Bearer token.
- */
 function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null
   return localStorage.getItem('payxpress_access_token')
@@ -31,7 +21,9 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: response.statusText }))
-    throw new Error(body.message || `Request failed: ${response.status}`)
+    const err = new Error(body.message || `Request failed: ${response.status}`) as Error & { status?: number }
+    err.status = response.status
+    throw err
   }
 
   return response.json()
@@ -81,15 +73,15 @@ export function initiateBillerCheckout(payload: {
   })
 }
 
+function toTransaction(raw: any): Transaction {
+  return { ...raw, timestamp: new Date(raw.timestamp) }
+}
+
 /**
  * GET /billers/payments/verify/{reference} — call this after the Paystack
  * redirect returns. Actively triggers server-side confirmation (safe to call
  * even if the webhook already handled it) and returns the resulting status.
  */
-function toTransaction(raw: any): Transaction {
-  return { ...raw, timestamp: new Date(raw.timestamp) }
-}
-
 export async function verifyBillerPayment(reference: string): Promise<Transaction> {
   const raw = await apiFetch<Transaction>(`/billers/payments/verify/${reference}`)
   return toTransaction(raw)
@@ -125,4 +117,31 @@ export function deleteBillBeneficiary(id: string): Promise<{ deleted: boolean }>
   return apiFetch<{ deleted: boolean }>(`/billers/beneficiaries/${id}`, {
     method: 'DELETE',
   })
+}
+
+/**
+ * GET /wallet/balance — same contract as lib/auth-api's fetchWalletBalance,
+ * but reads the stored token itself. Used to re-fetch the balance after a
+ * completed payment without threading the token through the UI.
+ */
+export function getWalletBalance(): Promise<{ balance: number; currency: string }> {
+  return apiFetch<{ balance: number; currency: string }>('/wallet/balance')
+}
+
+/**
+ * POST /wallet/debits/bill-payment — "Pay with Balance". Debits the wallet
+ * directly (no Paystack redirect) and returns a transaction aligned with
+ * bill payment history. Errors: 402 → insufficient balance, 400 → failed.
+ */
+export async function debitWalletForBillPayment(payload: {
+  uniqueCode: string
+  categoryPath: string
+  amount: number
+  details: Record<string, unknown>
+}): Promise<Transaction> {
+  const raw = await apiFetch<Transaction>('/wallet/debits/bill-payment', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  return { ...toTransaction(raw), paymentMethod: 'wallet' }
 }

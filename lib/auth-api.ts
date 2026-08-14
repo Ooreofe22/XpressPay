@@ -11,7 +11,9 @@ async function authFetch<T>(path: string, options: RequestInit = {}): Promise<T>
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: response.statusText }))
-    throw new Error(body.message || `Request failed: ${response.status}`)
+    const err = new Error(body.message || `Request failed: ${response.status}`) as Error & { status?: number }
+    err.status = response.status
+    throw err
   }
 
   return response.json()
@@ -21,30 +23,34 @@ export interface TokenResponse {
   accessToken: string
   refreshToken: string
   userId: string
-  phone: string
+  email: string
 }
 
-export function submitBvn(bvn: string): Promise<{ valid: boolean }> {
-  return authFetch('/auth/signup/bvn', { method: 'POST', body: JSON.stringify({ bvn }) })
+// ── Email + OTP auth ─────────────────────────────────────────────────────
+// Signup: request-otp sends the code, verify-otp creates the account and
+// returns tokens. Login: same two-step shape against the login endpoints.
+// Error messages come straight from the backend:
+//   signup request 409 → "An account with this email already exists"
+//   login request  404 → "No account found for this email"
+//   verify         400 → "Invalid code" · 410 → "Code expired"
+
+export function requestSignupOtp(email: string): Promise<{ message: string }> {
+  return authFetch('/auth/signup/request-otp', { method: 'POST', body: JSON.stringify({ email }) })
 }
 
-export function requestSignupOtp(phone: string): Promise<{ message: string }> {
-  return authFetch('/auth/signup/request-otp', { method: 'POST', body: JSON.stringify({ phone }) })
-}
-
-export function verifySignupOtp(phone: string, bvn: string, otp: string): Promise<TokenResponse> {
+export function verifySignupOtp(email: string, otp: string): Promise<TokenResponse> {
   return authFetch('/auth/signup/verify-otp', {
     method: 'POST',
-    body: JSON.stringify({ phone, bvn, otp }),
+    body: JSON.stringify({ email, otp }),
   })
 }
 
-export function requestLoginOtp(phone: string): Promise<{ message: string }> {
-  return authFetch('/auth/login/request-otp', { method: 'POST', body: JSON.stringify({ phone }) })
+export function requestLoginOtp(email: string): Promise<{ message: string }> {
+  return authFetch('/auth/login/request-otp', { method: 'POST', body: JSON.stringify({ email }) })
 }
 
-export function verifyLoginOtp(phone: string, otp: string): Promise<TokenResponse> {
-  return authFetch('/auth/login/verify-otp', { method: 'POST', body: JSON.stringify({ phone, otp }) })
+export function verifyLoginOtp(email: string, otp: string): Promise<TokenResponse> {
+  return authFetch('/auth/login/verify-otp', { method: 'POST', body: JSON.stringify({ email, otp }) })
 }
 
 export function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {

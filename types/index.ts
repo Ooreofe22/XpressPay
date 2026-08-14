@@ -2,7 +2,7 @@ export interface User {
   id: string
   name: string
   email: string
-  phone: string
+  phone?: string
   accountNumber: string
   accountBalance: number
   avatar: string
@@ -11,6 +11,8 @@ export interface User {
     level: 'bronze' | 'silver' | 'gold'
   }
 }
+
+export type PaymentMethod = 'wallet' | 'paystack' | 'card' | 'transfer'
 
 export interface Transaction {
   id: string
@@ -21,6 +23,7 @@ export interface Transaction {
   timestamp: Date
   status: 'pending' | 'completed' | 'failed'
   reference: string
+  paymentMethod?: PaymentMethod
 }
 
 export interface BankContact {
@@ -75,7 +78,6 @@ export interface BillCheckoutResponse {
   reference: string
   amount: number
 }
-
 
 export interface Beneficiary {
   id: string
