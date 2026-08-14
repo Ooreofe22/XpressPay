@@ -6,11 +6,18 @@ import { AuthLayout } from '@/components/auth/AuthLayout'
 import { Loader2 } from 'lucide-react'
 import { motion } from 'motion/react'
 
+// Shared final step for BOTH signup and login — reached from SignUpOTP after a
+// real account is created, and from LoginOTPScreen after a real login. The
+// backend has no PIN concept at all (email+OTP only); this PIN is a local
+// device-level quick-unlock gate on top of the session already issued by the
+// OTP step, stored hashed via lib/localPin.ts and keyed by email. First entry
+// for an email on this device SETS the PIN; every entry after must match it.
 export function WelcomeBackScreen() {
   const { completeLogin, setAuthScreen, pendingEmail, isSettingNewPin } = useApp()
   const [pin, setPin] = useState(['', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [shake, setShake] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const handleChange = (index: number, value: string) => {
@@ -43,6 +50,8 @@ export function WelcomeBackScreen() {
       await completeLogin(pinCode)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid PIN. Try again.')
+      setShake(true)
+      setTimeout(() => setShake(false), 500)
       setPin(['', '', '', ''])
       inputRefs.current[0]?.focus()
     } finally {
@@ -51,7 +60,7 @@ export function WelcomeBackScreen() {
   }
 
   const maskedEmail = pendingEmail
-    ? pendingEmail.replace(/(.{2}).+(@.+)/, '$1***$2')
+    ? pendingEmail.replace(/^(.{2}).*(@.*)$/, '$1••••$2')
     : ''
 
   return (
@@ -63,8 +72,8 @@ export function WelcomeBackScreen() {
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2">
-            {pendingEmail ? pendingEmail.charAt(0).toUpperCase() : '•'}
+          <div className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2 uppercase">
+            {pendingEmail ? pendingEmail.charAt(0) : '•'}
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
@@ -75,19 +84,25 @@ export function WelcomeBackScreen() {
                 ? `Set a 4-digit PIN to secure ${maskedEmail}`
                 : 'Enter your PIN to continue'}
             </p>
+            <button
+              onClick={() => setAuthScreen('splash')}
+              className="text-xs text-primary font-medium hover:underline mt-2 transition-colors"
+            >
+              Not your account? Log out
+            </button>
           </div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
+          animate={shake ? { x: [0, -6, 6, -4, 4, 0], opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+          transition={{ duration: shake ? 0.45 : 0.35, delay: shake ? 0 : 0.1 }}
           className="flex gap-3 justify-center"
         >
           {pin.map((digit, index) => (
-            <input
+            <motion.input
               key={index}
-              ref={(el) => {
+              ref={(el: HTMLInputElement | null) => {
                 inputRefs.current[index] = el
               }}
               type="password"
@@ -98,7 +113,9 @@ export function WelcomeBackScreen() {
               onKeyDown={(e) => handleKeyDown(index, e)}
               disabled={loading}
               aria-label={`PIN digit ${index + 1}`}
-              className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
+              animate={digit ? { scale: [0.88, 1.06, 1] } : { scale: 1 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
                 digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
               }`}
             />
@@ -123,7 +140,7 @@ export function WelcomeBackScreen() {
         )}
 
         {isSettingNewPin && (
-          <p className="text-xs text-muted-foreground text-center max-w-xs">
+          <p className="text-xs text-muted-foreground text-center max-w-xs -mt-2">
             You&apos;ll use this PIN to unlock PayXpress on this device next time
           </p>
         )}
