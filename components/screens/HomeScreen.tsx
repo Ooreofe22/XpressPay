@@ -19,7 +19,10 @@ import {
   Wifi,
 } from 'lucide-react'
 import { SendMoneyScreen } from '@/components/screens/SendMoneyScreen'
+import { ReceiptModal } from '@/components/screens/ReceiptModal'
 import { formatCurrency } from '@/lib/utils'
+import { useCountUp } from '@/lib/useCountUp'
+import type { Transaction } from '@/types'
 
 function formatDateGroup(dateStr: string): string {
   const date = new Date(dateStr)
@@ -32,18 +35,14 @@ function formatDateGroup(dateStr: string): string {
   return date.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'short' })
 }
 
-function initialsOf(name: string) {
-  return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-}
-
 export function HomeScreen() {
   const { user, transactions, currentTab, setCurrentTab, bankContacts, setBillsActiveTab } = useApp()
   const [showBalance, setShowBalance] = useState(true)
   const [showSendMoney, setShowSendMoney] = useState(false)
+  const [receiptTx, setReceiptTx] = useState<Transaction | null>(null)
+
+  // Signature moment: the balance counts up (or down) whenever it changes.
+  const animatedBalance = useCountUp(user?.accountBalance ?? 0)
 
   if (!user) return null
 
@@ -117,9 +116,9 @@ export function HomeScreen() {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 lg:gap-6 items-start">
           {/* ── Main column ─────────────────────────────────────────── */}
           <div className="xl:col-span-2 space-y-5 lg:space-y-6">
-            {/* Balance card */}
-            <section className="balance-gradient rounded-2xl p-5 sm:p-6 lg:p-7 elevation-3 relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+            {/* Balance card — the signature glass moment */}
+            <section className="balance-gradient balance-glass rounded-2xl p-5 sm:p-6 lg:p-7 elevation-3 relative overflow-hidden">
+              <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
                     <p className="text-xs text-white/70 font-medium">Available Balance</p>
@@ -135,8 +134,8 @@ export function HomeScreen() {
                       )}
                     </button>
                   </div>
-                  <p className="text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4">
-                    {showBalance ? formatCurrency(user.accountBalance) : '₦ ••••••'}
+                  <p className="text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4 tabular-nums">
+                    {showBalance ? formatCurrency(Math.round(animatedBalance)) : '₦ ••••••'}
                   </p>
                   <button className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 transition-colors rounded-full px-3 py-1.5">
                     <span className="text-xs text-white/80">Acct No</span>
@@ -223,7 +222,7 @@ export function HomeScreen() {
               </div>
             </section>
 
-            {/* Recent transactions */}
+            {/* Recent transactions — tap any row to reopen its receipt */}
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-foreground">Recent Transactions</h2>
@@ -257,9 +256,10 @@ export function HomeScreen() {
                               const amountPrefix = isCredit ? '+' : '-'
 
                               return (
-                                  <div
+                                  <button
                                       key={tx.id}
-                                      className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/40 transition-colors"
+                                      onClick={() => setReceiptTx(tx)}
+                                      className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/40 transition-colors text-left"
                                   >
                                     <div
                                         className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -283,7 +283,7 @@ export function HomeScreen() {
                                 {tx.status}
                               </span>
                                     </div>
-                                  </div>
+                                  </button>
                               )
                             })}
                           </div>
@@ -328,68 +328,44 @@ export function HomeScreen() {
                   Manage
                 </button>
               </div>
-              <div className="relative w-full aspect-[1.586] rounded-2xl bank-card-gradient elevation-2 p-5 flex flex-col justify-between overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_20%_0%,rgba(255,255,255,0.08),transparent_60%)] pointer-events-none" />
-                <div className="flex items-start justify-between relative">
-                  <div>
-                    <p className="text-white font-bold text-sm tracking-tight">PayXpress</p>
-                    <p className="text-white/50 text-[10px]">Digital Banking</p>
-                  </div>
-                  <Wifi size={18} className="text-white/70 rotate-90" />
+              <div className="bank-card-gradient rounded-2xl p-5 elevation-2 text-white">
+                <div className="flex items-center justify-between mb-6">
+                  <Wifi size={20} className="text-white/70 rotate-90" />
+                  <span className="text-xs font-semibold text-white/70">Debit</span>
                 </div>
-                <p className="text-white font-mono text-base tracking-[0.16em] relative">
-                  **** **** **** 0123
-                </p>
-                <div className="flex items-end justify-between relative">
-                  <div>
-                    <p className="text-white/50 text-[9px] uppercase tracking-wider mb-0.5">
-                      Card Holder
-                    </p>
-                    <p className="text-white text-xs font-semibold tracking-wide">
-                      {user.name.toUpperCase()}
-                    </p>
-                  </div>
-                  <p className="text-white font-bold text-sm italic tracking-tight">VERVE</p>
+                <p className="font-mono text-lg tracking-widest mb-4">**** **** **** 0123</p>
+                <div className="flex items-center justify-between text-xs text-white/70">
+                  <span>{user.name.toUpperCase()}</span>
+                  <span>12/26</span>
                 </div>
               </div>
             </section>
 
-            {/* Send again */}
+            {/* Recent contacts */}
             {recentContacts.length > 0 && (
-                <section className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm font-semibold text-foreground">Send Again</p>
-                    <button
-                        onClick={() => setShowSendMoney(true)}
-                        className="text-xs font-semibold text-primary hover:underline"
-                    >
-                      New
-                    </button>
-                  </div>
-                  <div className="space-y-1">
-                    {recentContacts.map((c) => (
-                        <button
-                            key={c.id}
-                            onClick={() => setShowSendMoney(true)}
-                            className="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-secondary/50 transition-colors"
-                        >
-                    <span className="w-9 h-9 rounded-full bg-primary-tint flex items-center justify-center flex-shrink-0">
-                      <span className="text-primary font-bold text-[11px]">
-                        {initialsOf(c.name)}
-                      </span>
+                <section>
+                  <h2 className="text-sm font-bold text-foreground mb-3">Recent Contacts</h2>
+                  <div className="bg-card border border-card-border rounded-2xl divide-y divide-card-border elevation-1 overflow-hidden">
+                    {recentContacts.map((contact) => (
+                        <div key={contact.id} className="flex items-center gap-3 px-4 py-3">
+                    <span className="w-9 h-9 rounded-full bg-primary-tint flex items-center justify-center text-xs font-bold text-primary">
+                      {contact.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                     </span>
-                          <div className="text-left min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{c.bankName}</p>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{contact.name}</p>
+                            <p className="text-xs text-muted-foreground">{contact.bankName}</p>
                           </div>
-                          <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />
-                        </button>
+                        </div>
                     ))}
                   </div>
                 </section>
             )}
           </aside>
         </div>
+
+        {receiptTx && (
+            <ReceiptModal transaction={receiptTx} onClose={() => setReceiptTx(null)} />
+        )}
       </div>
   )
 }

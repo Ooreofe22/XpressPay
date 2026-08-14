@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ArrowLeft, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
-import type { Biller } from '@/types'
+import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Wallet, CreditCard } from 'lucide-react'
+import type { Biller, Transaction } from '@/types'
 import { formatCurrency } from '@/lib/utils'
-import { validateBiller, initiateBillerCheckout } from '@/lib/api'
+import { validateBiller, initiateBillerCheckout, debitWalletForBillPayment } from '@/lib/api'
 import { useApp } from '@/context/AppContext'
+import { ReceiptModal } from '@/components/screens/ReceiptModal'
 
 interface BillPaymentFlowProps {
   biller: Biller
@@ -15,6 +16,7 @@ interface BillPaymentFlowProps {
 }
 
 type FlowStep = 'details' | 'confirm' | 'redirecting'
+type PaymentMethodChoice = 'wallet' | 'paystack'
 
 export function BillPaymentFlow({
                                   biller,
@@ -22,7 +24,7 @@ export function BillPaymentFlow({
                                   initialAccountNumber,
                                   initialAccountType,
                                 }: BillPaymentFlowProps) {
-  const { addBillerBeneficiary } = useApp()
+  const { addBillerBeneficiary, user, refreshWalletBalance, refreshTransactionHistory } = useApp()
   const isElectricity = biller.categoryPath === 'electricity'
   const isCable = biller.categoryPath === 'cable'
   const isAirtimeOrData = biller.categoryPath === 'airtime' || biller.categoryPath === 'data'
@@ -44,15 +46,28 @@ export function BillPaymentFlow({
   const [payError, setPayError] = useState<string | null>(null)
   const [saveAsBeneficiary, setSaveAsBeneficiary] = useState(true)
 
+  // Payment method — wallet debit is the new path; Paystack is byte-for-byte
+  // the flow that already existed (initiate → redirect to authorizationUrl).
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodChoice>('wallet')
+  const [completedTx, setCompletedTx] = useState<Transaction | null>(null)
+
   // for cable, the amount is fixed by the package and returned from validate()
   const [validatedCableAmount, setValidatedCableAmount] = useState<string>('0')
   const displayAmount = isCable && validatedName ? Number(validatedCableAmount) : Number(amount || 0)
 
   const identifierLabel = isElectricity ? 'Meter number' : isCable ? 'Smartcard number' : 'Phone number'
+  const insufficientBalance = user !== null && displayAmount > user.accountBalance
 
   const canSubmitDetails = isAirtimeOrData
       ? phoneNumber.length >= 10 && Number(amount) > 0
       : accountNumber.length >= 5
+
+  const buildDetails = (): Record<string, unknown> =>
+      isElectricity
+          ? { accountNumber, accountType, name: validatedName, address: validatedAddress }
+          : isCable
+              ? { accountNumber, accountType: 'smartcard', noOfMonth, name: validatedName, phoneNumber }
+              : { phoneNumber }
 
   const handleDetailsSubmit = async () => {
     if (!needsValidate) {
@@ -87,49 +102,62 @@ export function BillPaymentFlow({
     }
   }
 
+  const maybeSaveBeneficiary = async () => {
+    const identifier = isAirtimeOrData ? phoneNumber : accountNumber
+    const label = validatedName || `${biller.name} • ${identifier}`
+
+    // Must await this — it fires a POST to the backend. Without awaiting,
+    // the Paystack redirect fires immediately and cancels the in-flight
+    // request before the server ever receives it.
+    if (saveAsBeneficiary) {
+      try {
+        await addBillerBeneficiary({
+          id:
+              typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                  ? crypto.randomUUID()
+                  : `${biller.uniqueCode}-${identifier}-${Date.now()}`,
+          billerUniqueCode: biller.uniqueCode,
+          billerName: biller.name,
+          billerCategoryPath: biller.categoryPath,
+          accountNumber: identifier,
+          accountType: isElectricity ? accountType : undefined,
+          label,
+        })
+      } catch (err) {
+        // don't block the payment if saving the beneficiary fails
+        console.error('Could not save beneficiary:', err)
+      }
+    }
+  }
+
   const handlePay = async () => {
     setPaying(true)
     setPayError(null)
     try {
-      const details: Record<string, unknown> = isElectricity
-          ? { accountNumber, accountType, name: validatedName, address: validatedAddress }
-          : isCable
-              ? { accountNumber, accountType: 'smartcard', noOfMonth, name: validatedName, phoneNumber }
-              : { phoneNumber }
+      if (paymentMethod === 'wallet') {
+        // ── Pay with Balance: confirm → debit → receipt, no redirect ──
+        const tx = await debitWalletForBillPayment({
+          uniqueCode: biller.uniqueCode,
+          categoryPath: biller.categoryPath,
+          amount: displayAmount,
+          details: buildDetails(),
+        })
+        await maybeSaveBeneficiary()
+        refreshWalletBalance()
+        refreshTransactionHistory()
+        setCompletedTx(tx)
+        return
+      }
 
+      // ── Paystack: unchanged from the existing flow ──
       const result = await initiateBillerCheckout({
         uniqueCode: biller.uniqueCode,
         categoryPath: biller.categoryPath,
         amount: displayAmount,
-        details,
+        details: buildDetails(),
       })
 
-      const identifier = isAirtimeOrData ? phoneNumber : accountNumber
-      const label = validatedName || `${biller.name} • ${identifier}`
-
-      // Must await this — it fires a POST to the backend. Without awaiting,
-      // the window.location.href redirect below fires immediately and cancels
-      // the in-flight request before the server ever receives it, which is
-      // why beneficiaries weren't persisting even though this code "ran".
-      if (saveAsBeneficiary) {
-        try {
-          await addBillerBeneficiary({
-            id:
-                typeof crypto !== 'undefined' && 'randomUUID' in crypto
-                    ? crypto.randomUUID()
-                    : `${biller.uniqueCode}-${identifier}-${Date.now()}`,
-            billerUniqueCode: biller.uniqueCode,
-            billerName: biller.name,
-            billerCategoryPath: biller.categoryPath,
-            accountNumber: identifier,
-            accountType: isElectricity ? accountType : undefined,
-            label,
-          })
-        } catch (err) {
-          // don't block the payment redirect if saving the beneficiary fails
-          console.error('Could not save beneficiary:', err)
-        }
-      }
+      await maybeSaveBeneficiary()
 
       setStep('redirecting')
       // Paystack's checkout page — user leaves the app here and comes back via
@@ -137,9 +165,25 @@ export function BillPaymentFlow({
       // should point at /bills/callback in this app. See app/bills/callback/page.tsx
       window.location.href = result.authorizationUrl
     } catch (err) {
-      setPayError(err instanceof Error ? err.message : 'Could not start payment. Please try again.')
+      const status = (err as { status?: number })?.status
+      if (status === 402) {
+        setPayError('Insufficient wallet balance — top up or pay with Paystack instead.')
+      } else {
+        setPayError(err instanceof Error ? err.message : 'Could not complete payment. Please try again.')
+      }
       setPaying(false)
     }
+  }
+
+  // Wallet payment completed → same receipt UX as the rest of the app
+  if (completedTx) {
+    return (
+        <ReceiptModal
+            transaction={completedTx}
+            billerName={biller.name}
+            onClose={onClose}
+        />
+    )
   }
 
   return (
@@ -309,8 +353,7 @@ export function BillPaymentFlow({
                 <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-card-border">
                   <button
                       onClick={() => setStep('details')}
-                      disabled={paying}
-                      className="w-9 h-9 flex items-center justify-center rounded-lg text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+                      className="w-9 h-9 flex items-center justify-center rounded-lg text-foreground hover:bg-secondary transition-colors"
                   >
                     <ArrowLeft size={19} />
                   </button>
@@ -319,64 +362,79 @@ export function BillPaymentFlow({
                 </div>
 
                 <div className="px-5 pt-5 pb-6 space-y-5">
-                  {needsValidate && validatedName && (
-                      <div className="rounded-xl p-4 bg-primary-tint border border-primary/15">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <CheckCircle2 size={13} className="text-primary" />
-                          <span className="text-xs font-semibold text-primary uppercase tracking-wide">Verified</span>
-                        </div>
-                        <p className="text-sm font-bold text-foreground">{validatedName}</p>
-                        {validatedAddress && <p className="text-xs text-muted-foreground mt-0.5">{validatedAddress}</p>}
-                      </div>
-                  )}
-
-                  <div className="bg-secondary rounded-xl p-4 space-y-3">
+                  {/* Summary */}
+                  <div className="bg-card border border-card-border rounded-2xl p-4 space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Biller</span>
                       <span className="font-semibold text-foreground">{biller.name}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{identifierLabel}</span>
-                      <span className="font-semibold font-mono text-foreground">{accountNumber || phoneNumber}</span>
+                      <span className="font-semibold text-foreground">
+                        {isAirtimeOrData ? phoneNumber : accountNumber}
+                      </span>
                     </div>
-                    {isCable && (
+                    {validatedName && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Duration</span>
-                          <span className="font-semibold text-foreground">{noOfMonth} month{noOfMonth > 1 ? 's' : ''}</span>
+                          <span className="text-muted-foreground">Customer</span>
+                          <span className="font-semibold text-foreground text-right">{validatedName}</span>
                         </div>
+                    )}
+                    <div className="flex justify-between text-sm border-t border-card-border pt-3">
+                      <span className="text-muted-foreground">Amount</span>
+                      <span className="font-bold text-foreground text-base">{formatCurrency(displayAmount)}</span>
+                    </div>
+                  </div>
+
+                  {/* Payment method selector */}
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                      Pay with
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                          onClick={() => setPaymentMethod('wallet')}
+                          className={`flex flex-col items-start gap-1.5 p-3.5 rounded-xl border text-left transition-all ${
+                              paymentMethod === 'wallet'
+                                  ? 'border-primary bg-primary-tint ring-1 ring-primary/30'
+                                  : 'border-card-border bg-card hover:border-primary/30'
+                          }`}
+                      >
+                        <Wallet size={18} className={paymentMethod === 'wallet' ? 'text-primary' : 'text-muted-foreground'} />
+                        <span className="text-sm font-semibold text-foreground">Balance</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {user ? formatCurrency(user.accountBalance) : '—'} available
+                        </span>
+                      </button>
+                      <button
+                          onClick={() => setPaymentMethod('paystack')}
+                          className={`flex flex-col items-start gap-1.5 p-3.5 rounded-xl border text-left transition-all ${
+                              paymentMethod === 'paystack'
+                                  ? 'border-primary bg-primary-tint ring-1 ring-primary/30'
+                                  : 'border-card-border bg-card hover:border-primary/30'
+                          }`}
+                      >
+                        <CreditCard size={18} className={paymentMethod === 'paystack' ? 'text-primary' : 'text-muted-foreground'} />
+                        <span className="text-sm font-semibold text-foreground">Paystack</span>
+                        <span className="text-[11px] text-muted-foreground">Card, bank, USSD</span>
+                      </button>
+                    </div>
+                    {paymentMethod === 'wallet' && insufficientBalance && (
+                        <p className="text-xs text-destructive font-medium mt-2">
+                          Balance too low for this payment — pick Paystack instead.
+                        </p>
                     )}
                   </div>
 
-                  {isElectricity && (
-                      <div>
-                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
-                          Amount
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">₦</span>
-                          <input
-                              value={amount}
-                              onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
-                              placeholder="0"
-                              className="w-full h-12 pl-8 pr-4 bg-card border border-card-border rounded-xl text-base font-bold text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
-                          />
-                        </div>
-                      </div>
-                  )}
-
-                  <div className="pt-4 border-t border-dashed border-card-border flex items-center justify-between">
-                    <span className="text-sm font-semibold text-muted-foreground">Total</span>
-                    <span className="text-2xl font-bold text-foreground">{formatCurrency(displayAmount)}</span>
-                  </div>
-
-                  <label className="flex items-center gap-2.5 text-xs text-muted-foreground select-none cursor-pointer">
+                  {/* Save as beneficiary */}
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
                         type="checkbox"
                         checked={saveAsBeneficiary}
                         onChange={(e) => setSaveAsBeneficiary(e.target.checked)}
-                        className="w-4 h-4 rounded border-card-border text-primary focus:ring-primary/30 focus:ring-offset-0"
+                        className="w-4 h-4 accent-primary"
                     />
-                    Save this {identifierLabel.toLowerCase()} as a beneficiary for next time
+                    <span className="text-sm text-foreground">Save as beneficiary</span>
                   </label>
 
                   {payError && (
@@ -388,33 +446,35 @@ export function BillPaymentFlow({
 
                   <button
                       onClick={handlePay}
-                      disabled={paying || !displayAmount}
+                      disabled={paying || (paymentMethod === 'wallet' && insufficientBalance)}
                       className="w-full h-13 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary-dark transition-all active:scale-[0.98] disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed elevation-1 flex items-center justify-center gap-2"
                   >
                     {paying && <Loader2 size={16} className="animate-spin" />}
-                    {paying ? 'Starting payment…' : `Pay ${formatCurrency(displayAmount)}`}
+                    {paying
+                        ? paymentMethod === 'wallet'
+                            ? 'Debiting wallet…'
+                            : 'Starting payment…'
+                        : paymentMethod === 'wallet'
+                            ? `Pay ${formatCurrency(displayAmount)} from balance`
+                            : `Pay ${formatCurrency(displayAmount)} with Paystack`}
                   </button>
-                  <p className="text-xs text-muted-foreground text-center -mt-2">
-                    You&apos;ll be redirected to Paystack to complete payment
-                  </p>
                 </div>
               </div>
           )}
 
-          {/* ── REDIRECTING ───────────────────────────────────────── */}
+          {/* ── REDIRECTING (Paystack) ─────────────────────────────── */}
           {step === 'redirecting' && (
-              <div className="px-5 py-16 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-full bg-primary-tint flex items-center justify-center mb-5">
-                  <Loader2 size={28} className="text-primary animate-spin" />
-                </div>
-                <p className="text-base font-bold text-foreground mb-1">Redirecting to Paystack…</p>
-                <p className="text-sm text-muted-foreground max-w-[240px]">
-                  Complete your payment there — you&apos;ll be brought back here automatically
+              <div className="px-5 py-14 flex flex-col items-center text-center gap-3">
+                <Loader2 size={28} className="animate-spin text-primary" />
+                <p className="text-sm font-semibold text-foreground">Redirecting to Paystack…</p>
+                <p className="text-xs text-muted-foreground max-w-56">
+                  You&apos;ll complete the payment on Paystack&apos;s secure page, then return here automatically.
                 </p>
               </div>
           )}
-
         </div>
       </div>
   )
 }
+
+export { CheckCircle2 }
