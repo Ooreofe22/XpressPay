@@ -1,6 +1,6 @@
 import type { Biller, BillerValidateResult, BillCheckoutResponse, Transaction, BillBeneficiary } from '@/types'
 
-const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend-production.up.railway.app').replace(/\/+$/, '')
+const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend-production.up.railway.app').replace(/\/+$/,'')
 
 function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null
@@ -21,29 +21,20 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: response.statusText }))
-    const err = new Error(body.message || `Request failed: ${response.status}`) as Error & { status?: number }
-    err.status = response.status
-    throw err
+    throw new Error(body.message || `Request failed: ${response.status}`)
   }
 
   return response.json()
 }
 
-/** GET /billers — public, no auth needed. Returns every synced biller across all categories. */
 export function fetchAllBillers(): Promise<Biller[]> {
   return apiFetch<Biller[]>('/billers')
 }
 
-/** GET /billers/{categoryPath} — public. Use if you want a single category instead of fetchAllBillers(). */
 export function fetchBillersByCategory(categoryPath: string): Promise<Biller[]> {
   return apiFetch<Biller[]>(`/billers/${categoryPath}`)
 }
 
-/**
- * POST /billers/validate — required before checkout for electricity/cable
- * (requiresValidate: true on the Biller). Returns the customer's name/address
- * (electricity) or package price (cable) to confirm before payment.
- */
 export function validateBiller(payload: {
   uniqueCode: string
   categoryPath: string
@@ -57,10 +48,6 @@ export function validateBiller(payload: {
   })
 }
 
-/**
- * POST /billers/payments/initiate — creates the PaymentTransaction and returns
- * a Paystack authorizationUrl to redirect the user to.
- */
 export function initiateBillerCheckout(payload: {
   uniqueCode: string
   categoryPath: string
@@ -73,15 +60,22 @@ export function initiateBillerCheckout(payload: {
   })
 }
 
+export function payBillFromWallet(payload: {
+  uniqueCode: string
+  categoryPath: string
+  amount: number
+  details: Record<string, unknown>
+}): Promise<Transaction> {
+  return apiFetch<Transaction>('/wallet/debits/bill-payment', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 function toTransaction(raw: any): Transaction {
   return { ...raw, timestamp: new Date(raw.timestamp) }
 }
 
-/**
- * GET /billers/payments/verify/{reference} — call this after the Paystack
- * redirect returns. Actively triggers server-side confirmation (safe to call
- * even if the webhook already handled it) and returns the resulting status.
- */
 export async function verifyBillerPayment(reference: string): Promise<Transaction> {
   const raw = await apiFetch<Transaction>(`/billers/payments/verify/${reference}`)
   return toTransaction(raw)
@@ -92,12 +86,10 @@ export async function fetchBillPaymentHistory(): Promise<Transaction[]> {
   return raw.map(toTransaction)
 }
 
-/** GET /billers/beneficiaries — saved recipients for the logged-in user. */
 export function fetchBillBeneficiaries(): Promise<BillBeneficiary[]> {
   return apiFetch<BillBeneficiary[]>('/billers/beneficiaries')
 }
 
-/** POST /billers/beneficiaries — persists a beneficiary and returns it with its real id. */
 export function createBillBeneficiary(payload: {
   billerUniqueCode: string
   billerCategoryPath: string
@@ -112,36 +104,8 @@ export function createBillBeneficiary(payload: {
   })
 }
 
-/** DELETE /billers/beneficiaries/{id} */
 export function deleteBillBeneficiary(id: string): Promise<{ deleted: boolean }> {
   return apiFetch<{ deleted: boolean }>(`/billers/beneficiaries/${id}`, {
     method: 'DELETE',
   })
-}
-
-/**
- * GET /wallet/balance — same contract as lib/auth-api's fetchWalletBalance,
- * but reads the stored token itself. Used to re-fetch the balance after a
- * completed payment without threading the token through the UI.
- */
-export function getWalletBalance(): Promise<{ balance: number; currency: string }> {
-  return apiFetch<{ balance: number; currency: string }>('/wallet/balance')
-}
-
-/**
- * POST /wallet/debits/bill-payment — "Pay with Balance". Debits the wallet
- * directly (no Paystack redirect) and returns a transaction aligned with
- * bill payment history. Errors: 402 → insufficient balance, 400 → failed.
- */
-export async function debitWalletForBillPayment(payload: {
-  uniqueCode: string
-  categoryPath: string
-  amount: number
-  details: Record<string, unknown>
-}): Promise<Transaction> {
-  const raw = await apiFetch<Transaction>('/wallet/debits/bill-payment', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-  return { ...toTransaction(raw), paymentMethod: 'wallet' }
 }

@@ -8,24 +8,19 @@ async function sha256(value: string): Promise<string> {
     .join('')
 }
 
-function keyFor(identity: string): string {
-  // Identity is the account email (post phone→email migration). Normalised so
-  // casing differences can't fork a user's PIN into two storage keys.
-  return PIN_STORAGE_PREFIX + identity.trim().toLowerCase()
-}
-
-/** True if this account has never set a local PIN on this device before. */
-export function isFirstTimePinForUser(identity: string): boolean {
+/** True if this identity has never set a local PIN on this device before. */
+export function isFirstTimePinForIdentity(identity: string): boolean {
   if (typeof window === 'undefined') return true
-  return localStorage.getItem(keyFor(identity)) === null
+  return localStorage.getItem(PIN_STORAGE_PREFIX + identity) === null
 }
 
 /**
- * First call for an account on this device sets the PIN. Every call after
- * that validates against the stored hash. Throws on mismatch.
+ * First call for an identity on this device sets the PIN.
+ * Every call after that validates against the stored hash.
+ * Throws on mismatch.
  */
 export async function setOrValidateLocalPin(identity: string, pin: string): Promise<void> {
-  const key = keyFor(identity)
+  const key = PIN_STORAGE_PREFIX + identity
   const hash = await sha256(pin)
   const existing = localStorage.getItem(key)
 

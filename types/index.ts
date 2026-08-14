@@ -12,8 +12,6 @@ export interface User {
   }
 }
 
-export type PaymentMethod = 'wallet' | 'paystack' | 'card' | 'transfer'
-
 export interface Transaction {
   id: string
   type: 'sent' | 'received' | 'payment' | 'deposit'
@@ -23,7 +21,7 @@ export interface Transaction {
   timestamp: Date
   status: 'pending' | 'completed' | 'failed'
   reference: string
-  paymentMethod?: PaymentMethod
+  paymentMethod?: 'wallet' | 'paystack'
 }
 
 export interface BankContact {
@@ -56,7 +54,7 @@ export interface Airtime {
 export interface Biller {
   uniqueCode: string
   name: string
-  categoryPath: string // "airtime" | "data" | "electricity" | "cable"
+  categoryPath: string
   requiresValidate: boolean
   fixedAmount: boolean
   amount: number | null
