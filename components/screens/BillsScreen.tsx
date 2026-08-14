@@ -14,6 +14,7 @@ import {
 import type { Biller, BillBeneficiary, Transaction } from '@/types'
 import { fetchAllBillers } from '@/lib/api'
 import { BillPaymentFlow } from '@/components/bills/BillPaymentFlow'
+import { ReceiptModal } from '@/components/screens/ReceiptModal'
 import { useApp } from '@/context/AppContext'
 import { formatCurrency } from '@/lib/utils'
 
@@ -29,7 +30,7 @@ const MAX_PER_CATEGORY = 5
 
 // Deterministic color per provider name so the same biller always renders the same circle color
 function providerColor(name: string): string {
-  const palette = ['#0b5cad', '#c2560c', '#0a8f3c', '#1f2933', '#b5121b', '#e5322d']
+  const palette = ['#0b5cad', '#c2560c', '#16A34A', '#1f2933', '#b5121b', '#E8542A']
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
   return palette[Math.abs(hash) % palette.length]
@@ -182,6 +183,7 @@ export function BillsScreen() {
   >(undefined)
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
   const [refreshingHistory, setRefreshingHistory] = useState(false)
+  const [receiptTx, setReceiptTx] = useState<Transaction | null>(null)
 
   useEffect(() => {
     fetchAllBillers()
@@ -376,16 +378,14 @@ export function BillsScreen() {
               </div>
 
               {transactions.length === 0 ? (
-                  <div className="bg-card border border-card-border rounded-2xl elevation-1 flex items-center justify-center min-h-96 px-8">
-                    <div className="text-center">
-                      <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-                        <ReceiptText size={26} className="text-muted-foreground" strokeWidth={1.75} />
-                      </div>
-                      <p className="text-foreground font-bold mb-1">No bill payments yet</p>
-                      <p className="text-sm text-muted-foreground text-pretty">
-                        Your bill payment history will appear here
-                      </p>
+                  <div className="bg-card border border-card-border rounded-2xl p-8 text-center elevation-1">
+                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
+                      <ReceiptText size={22} className="text-muted-foreground" strokeWidth={1.75} />
                     </div>
+                    <p className="text-sm font-semibold text-foreground mb-1">No transactions yet</p>
+                    <p className="text-xs text-muted-foreground">
+                      Your completed bill payments will appear here — tap any of them to see the receipt
+                    </p>
                   </div>
               ) : (
                   <div className="space-y-4">
@@ -396,32 +396,32 @@ export function BillsScreen() {
                           </p>
                           <div className="bg-card border border-card-border rounded-2xl divide-y divide-card-border elevation-1 overflow-hidden">
                             {txs.map((tx) => (
-                                <div
+                                <button
                                     key={tx.id}
-                                    className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/40 transition-colors"
+                                    onClick={() => setReceiptTx(tx)}
+                                    className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/40 transition-colors text-left"
                                 >
                                   <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                                     <ReceiptText size={18} className="text-foreground" strokeWidth={2} />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-foreground truncate">{tx.description}</p>
-                                    <p className="text-xs text-muted-foreground">{tx.reference}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {tx.reference}
+                                      {tx.paymentMethod ? ` · ${tx.paymentMethod === 'wallet' ? 'Balance' : 'Paystack'}` : ''}
+                                    </p>
                                   </div>
                                   <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                                    <p className="text-sm font-bold text-foreground">{formatCurrency(tx.amount)}</p>
-                                    <span
-                                        className={`text-[11px] font-medium capitalize ${
-                                            tx.status === 'completed'
-                                                ? 'text-credit'
-                                                : tx.status === 'failed'
-                                                    ? 'text-destructive'
-                                                    : 'text-muted-foreground'
-                                        }`}
-                                    >
-                            {tx.status}
-                          </span>
+                                    <p className="text-sm font-bold text-foreground">
+                                      -{formatCurrency(tx.amount)}
+                                    </p>
+                                    <span className={`text-[11px] font-medium capitalize ${
+                                        tx.status === 'completed' ? 'text-credit' : 'text-destructive'
+                                    }`}>
+                                      {tx.status}
+                                    </span>
                                   </div>
-                                </div>
+                                </button>
                             ))}
                           </div>
                         </div>
@@ -431,17 +431,19 @@ export function BillsScreen() {
             </div>
         )}
 
+        {/* Bill payment flow sheet */}
         {selectedBiller && (
             <BillPaymentFlow
                 biller={selectedBiller}
-                initialAccountNumber={prefillAccountNumber}
+                onClose={() => setSelectedBiller(null)}
+                initialAccountNumber={prefillAccountNumber || undefined}
                 initialAccountType={prefillAccountType}
-                onClose={() => {
-                  setSelectedBiller(null)
-                  setPrefillAccountNumber('')
-                  setPrefillAccountType(undefined)
-                }}
             />
+        )}
+
+        {/* Receipt — reopenable from any history row */}
+        {receiptTx && (
+            <ReceiptModal transaction={receiptTx} onClose={() => setReceiptTx(null)} />
         )}
       </div>
   )
