@@ -4,6 +4,7 @@ import React from 'react'
 import { useApp } from '@/context/AppContext'
 import { Logo } from '@/components/ui/Logo'
 import { ShieldCheck, Zap, ReceiptText, CreditCard } from 'lucide-react'
+import { motion } from 'motion/react'
 
 const features = [
   { icon: Zap, label: 'Instant transfers' },
@@ -16,7 +17,6 @@ export function SplashScreen() {
 
   return (
     <div className="min-h-screen splash-gradient relative overflow-hidden">
-      {/* Faint orbital accents */}
       <div
         aria-hidden
         className="absolute -right-40 -top-40 w-[32rem] h-[32rem] rounded-full border border-white/10"
@@ -26,7 +26,6 @@ export function SplashScreen() {
         className="absolute -left-32 bottom-0 w-[28rem] h-[28rem] rounded-full border border-white/10"
       />
 
-      {/* Hero */}
       <main className="relative max-w-6xl mx-auto px-6 sm:px-10 flex flex-col items-center text-center pt-10 sm:pt-16 pb-16">
         <div className="animate-fade-up flex flex-col items-center">
           <Logo size="lg" variant="inverse" showOrbital animated />
@@ -42,7 +41,6 @@ export function SplashScreen() {
             Nigeria moves money.
           </p>
 
-          {/* Feature chips */}
           <ul className="flex flex-wrap items-center justify-center gap-2.5 mt-8">
             {features.map(({ icon: Icon, label }) => (
               <li
@@ -55,20 +53,21 @@ export function SplashScreen() {
             ))}
           </ul>
 
-          {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center gap-3 mt-10 w-full max-w-md">
-            <button
+            <motion.button
+              whileTap={{ scale: 0.98 }}
               onClick={() => setAuthScreen('signup-email')}
-              className="w-full sm:flex-1 h-13 rounded-xl bg-accent text-accent-foreground font-semibold text-base transition-all duration-200 hover:bg-accent-dark active:scale-[0.98] elevation-2"
+              className="w-full sm:flex-1 h-13 rounded-xl bg-accent text-accent-foreground font-semibold text-base transition-all duration-200 hover:bg-accent-dark elevation-2"
             >
               Create an account
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
               onClick={() => setAuthScreen('login-email')}
-              className="w-full sm:flex-1 h-13 rounded-xl border border-white/40 bg-white/5 text-white font-semibold text-base transition-all duration-200 hover:bg-white/15 active:scale-[0.98]"
+              className="w-full sm:flex-1 h-13 rounded-xl border border-white/40 bg-white/5 text-white font-semibold text-base transition-all duration-200 hover:bg-white/15"
             >
               Log in
-            </button>
+            </motion.button>
           </div>
 
           <p className="flex items-center justify-center gap-1.5 text-white/55 text-xs mt-8">
