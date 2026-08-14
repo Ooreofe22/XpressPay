@@ -8,25 +8,25 @@ interface OtpInputProps {
   onChange: (value: string[]) => void
   onComplete?: (otp: string) => void
   disabled?: boolean
-  /** Set true briefly to shake the row — e.g. after a rejected code. */
-  shake?: boolean
-  invalid?: boolean
+  /** Flip to a new truthy value to trigger the error shake. */
+  shakeKey?: number
+  hasError?: boolean
   length?: number
 }
 
-export interface OtpInputHandle {
+export interface OtpInputRef {
   focus: () => void
   clear: () => void
 }
 
 /**
  * Segmented OTP entry shared by the signup and login verification screens.
- * Handles auto-advance, backspace-to-previous, full-code paste, and a per-digit
- * fill animation. All motion collapses to a plain state change when the user
- * prefers reduced motion.
+ * Handles auto-advance, backspace-to-previous, full-code paste, per-digit fill
+ * animation and an error shake. Motion is skipped entirely when the user has
+ * reduced-motion set.
  */
-export const OtpInput = forwardRef<OtpInputHandle, OtpInputProps>(function OtpInput(
-  { value, onChange, onComplete, disabled, shake, invalid, length = 6 },
+export const OtpInput = forwardRef<OtpInputRef, OtpInputProps>(function OtpInput(
+  { value, onChange, onComplete, disabled, shakeKey = 0, hasError, length = 6 },
   ref
 ) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -42,23 +42,26 @@ export const OtpInput = forwardRef<OtpInputHandle, OtpInputProps>(function OtpIn
 
   useEffect(() => {
     inputRefs.current[0]?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const commit = (next: string[]) => {
+    onChange(next)
+    const joined = next.join('')
+    if (joined.length === length && next.every((d) => d !== '')) {
+      onComplete?.(joined)
+    }
+  }
 
   const handleChange = (index: number, raw: string) => {
     if (disabled) return
     const digit = raw.replace(/\D/g, '').slice(-1)
     const next = [...value]
     next[index] = digit
-    onChange(next)
-
     if (digit && index < length - 1) {
       inputRefs.current[index + 1]?.focus()
     }
-
-    const joined = next.join('')
-    if (joined.length === length && next.every((d) => d !== '')) {
-      onComplete?.(joined)
-    }
+    commit(next)
   }
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -78,50 +81,51 @@ export const OtpInput = forwardRef<OtpInputHandle, OtpInputProps>(function OtpIn
     if (disabled) return
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length)
     if (!pasted) return
-
     const next = new Array(length).fill('')
     for (let i = 0; i < pasted.length; i++) next[i] = pasted[i]
-    onChange(next)
-
     inputRefs.current[Math.min(pasted.length, length - 1)]?.focus()
-    if (pasted.length === length) onComplete?.(pasted)
+    commit(next)
   }
 
   return (
     <motion.div
-      animate={shake && !reduceMotion ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }}
-      transition={{ duration: 0.45, ease: 'easeInOut' }}
+      key={shakeKey}
+      animate={shakeKey && !reduceMotion ? { x: [0, -6, 5, -4, 3, 0] } : { x: 0 }}
+      transition={{ duration: 0.45, ease: [0.36, 0.07, 0.19, 0.97] }}
       className="flex gap-2.5 justify-between sm:justify-start"
     >
       {Array.from({ length }).map((_, index) => {
         const filled = Boolean(value[index])
         return (
-          <motion.input
+          <motion.div
             key={index}
-            ref={(el: HTMLInputElement | null) => {
-              inputRefs.current[index] = el
-            }}
-            type="text"
-            inputMode="numeric"
-            autoComplete={index === 0 ? 'one-time-code' : 'off'}
-            maxLength={1}
-            value={value[index] ?? ''}
-            onChange={(e) => handleChange(index, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(index, e)}
-            onPaste={handlePaste}
-            disabled={disabled}
-            aria-label={`Digit ${index + 1}`}
-            aria-invalid={invalid || undefined}
-            animate={reduceMotion ? undefined : { scale: filled ? [0.92, 1.06, 1] : 1 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors focus:outline-none focus:ring-2 disabled:opacity-50 ${
-              invalid
-                ? 'border-destructive bg-destructive/5 focus:border-destructive focus:ring-destructive/15'
-                : filled
-                  ? 'border-primary bg-primary-tint focus:border-primary focus:ring-primary/15'
-                  : 'border-card-border bg-background focus:border-primary focus:ring-primary/15'
-            }`}
-          />
+            animate={filled && !reduceMotion ? { scale: [1, 1.09, 1] } : { scale: 1 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+          >
+            <input
+              ref={(el) => {
+                inputRefs.current[index] = el
+              }}
+              type="text"
+              inputMode="numeric"
+              autoComplete={index === 0 ? 'one-time-code' : 'off'}
+              maxLength={1}
+              value={value[index] || ''}
+              onChange={(e) => handleChange(index, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              onPaste={handlePaste}
+              disabled={disabled}
+              aria-label={`Digit ${index + 1} of ${length}`}
+              aria-invalid={hasError || undefined}
+              className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors duration-200 focus:outline-none focus:ring-2 disabled:opacity-50 ${
+                hasError
+                  ? 'border-destructive bg-destructive/5 focus:border-destructive focus:ring-destructive/15'
+                  : filled
+                    ? 'border-primary bg-primary-tint focus:border-primary focus:ring-primary/15'
+                    : 'border-card-border bg-background focus:border-primary focus:ring-primary/15'
+              }`}
+            />
+          </motion.div>
         )
       })}
     </motion.div>

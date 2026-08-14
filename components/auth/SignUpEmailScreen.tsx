@@ -29,7 +29,7 @@ export function SignUpEmailScreen() {
     }
   }
 
-  const alreadyExists = /already exists/i.test(error)
+  const alreadyExists = error.toLowerCase().includes('already exists')
 
   return (
     <AuthLayout onBack={() => setAuthScreen('splash')} eyebrow="Create account · Step 1 of 2">
@@ -75,21 +75,18 @@ export function SignUpEmailScreen() {
 
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -4 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-destructive font-medium bg-destructive/10 px-4 py-2.5 rounded-lg"
+            className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg"
           >
-            {error}
+            {error}{' '}
             {alreadyExists && (
-              <>
-                {' '}
-                <button
-                  onClick={() => setAuthScreen('login-email')}
-                  className="underline font-semibold"
-                >
-                  Log in instead
-                </button>
-              </>
+              <button
+                onClick={() => setAuthScreen('login-email')}
+                className="underline font-semibold"
+              >
+                Log in instead
+              </button>
             )}
           </motion.div>
         )}

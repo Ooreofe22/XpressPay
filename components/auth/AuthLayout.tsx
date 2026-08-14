@@ -22,16 +22,19 @@ const highlights = [
 /**
  * Web-first split-screen shell for all auth screens.
  * Left: persistent brand panel (desktop only). Right: the form content, centered
- * over the ambient mesh so glass surfaces have something to refract.
+ * on an ambient gradient mesh so glass surfaces have something to refract.
  */
 export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex bg-background ambient-mesh">
+    <div className="min-h-screen flex bg-background">
       {/* ── Brand panel (desktop) ────────────────────── */}
       <aside className="relative hidden lg:flex lg:w-[46%] xl:w-[52%] splash-gradient flex-col justify-between p-10 xl:p-14 overflow-hidden">
         <div aria-hidden className="absolute -right-24 -top-24 w-96 h-96 rounded-full border border-white/10" />
         <div aria-hidden className="absolute -right-10 top-16 w-72 h-72 rounded-full border border-white/10" />
-        <div aria-hidden className="absolute -left-24 bottom-[-15%] w-[28rem] h-[28rem] rounded-full bg-white/[0.04] blur-3xl" />
+        <div
+          aria-hidden
+          className="absolute -left-24 bottom-[-15%] w-[30rem] h-[30rem] rounded-full bg-white/[0.04] blur-3xl"
+        />
 
         <div className="relative flex items-center gap-2.5">
           <Logo size="sm" variant="inverse" />
@@ -42,7 +45,7 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
           <motion.h2
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="text-white font-bold text-4xl xl:text-5xl leading-tight tracking-tight text-balance"
           >
             Pay Anywhere.
@@ -52,11 +55,11 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
           <motion.p
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.08 }}
+            transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
             className="text-white/70 text-base leading-relaxed mt-4 text-pretty"
           >
-            The modern way to move money in Nigeria — send, pay, and manage everything in one
-            secure place.
+            The modern way to move money in Nigeria — send, pay, and manage everything in one secure
+            place.
           </motion.p>
 
           <ul className="mt-10 space-y-5">
@@ -65,7 +68,7 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
                 key={label}
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.16 + i * 0.08 }}
+                transition={{ duration: 0.4, delay: 0.16 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
                 className="flex items-start gap-3.5"
               >
                 <span className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
@@ -87,14 +90,14 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
       </aside>
 
       {/* ── Form column ───────────────────────────── */}
-      <div className="relative flex-1 flex flex-col min-h-screen z-10">
-        <div className="flex items-center justify-between px-5 sm:px-8 h-16 flex-shrink-0">
+      <div className="flex-1 flex flex-col min-h-screen ambient-mesh">
+        <div className="relative z-10 flex items-center justify-between px-5 sm:px-8 h-16 flex-shrink-0">
           {onBack ? (
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.92 }}
               onClick={onBack}
               aria-label="Go back"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.92 }}
               className="w-10 h-10 flex items-center justify-center text-foreground bg-secondary hover:bg-secondary/70 rounded-full transition-colors"
             >
               <ArrowLeft size={20} />
@@ -103,17 +106,18 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
             <span />
           )}
 
+          {/* Brand shown on mobile where the panel is hidden */}
           <div className="flex items-center gap-2 lg:invisible">
             <Logo size="sm" variant="brand" />
             <span className="text-foreground font-bold text-base tracking-tight">PayXpress</span>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col justify-center px-5 sm:px-8 pb-10">
+        <div className="relative z-10 flex-1 flex flex-col justify-center px-5 sm:px-8 pb-10">
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-md mx-auto"
           >
             {eyebrow && (
