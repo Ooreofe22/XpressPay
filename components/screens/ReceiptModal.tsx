@@ -1,43 +1,38 @@
 'use client'
 
 import React from 'react'
-import { Check, Download, Share2, X, Wallet, CreditCard, ReceiptText } from 'lucide-react'
+import { motion } from 'motion/react'
+import { Check, Download, Share2, X, Clock, XCircle } from 'lucide-react'
 import { Transaction } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
 interface ReceiptModalProps {
   transaction: Transaction
   onClose: () => void
-  /** Biller name when known (bill payments); falls back to description. */
-  billerName?: string
 }
 
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  wallet: 'Wallet balance',
-  paystack: 'Paystack',
-  card: 'Card',
-  transfer: 'Bank transfer',
-}
+export function ReceiptModal({ transaction, onClose }: ReceiptModalProps) {
+  const methodLabel =
+    transaction.paymentMethod === 'wallet'
+      ? 'Wallet Balance'
+      : transaction.paymentMethod === 'paystack'
+        ? 'Paystack'
+        : '—'
 
-export function ReceiptModal({ transaction, onClose, billerName }: ReceiptModalProps) {
-  const isSuccess = transaction.status === 'completed'
-  const methodLabel = transaction.paymentMethod
-      ? PAYMENT_METHOD_LABELS[transaction.paymentMethod] ?? transaction.paymentMethod
-      : null
-  const billerLabel = billerName ?? transaction.recipient ?? transaction.description
-
-  const receiptText = `
-PayXpress Receipt
-================
-Reference: ${transaction.reference}
-Biller: ${billerLabel}
-Amount: ${formatCurrency(transaction.amount)}
-Date: ${new Date(transaction.timestamp).toLocaleString()}
-Status: ${transaction.status}
-${methodLabel ? `Payment method: ${methodLabel}` : ''}
-  `.trim()
+  const timestamp = new Date(transaction.timestamp)
 
   const handleDownload = () => {
+    const receiptText = [
+      'PayXpress Receipt',
+      '================',
+      `Reference: ${transaction.reference}`,
+      `Description: ${transaction.description}`,
+      `Amount: ${formatCurrency(transaction.amount)}`,
+      `Payment Method: ${methodLabel}`,
+      `Date: ${timestamp.toLocaleString('en-NG')}`,
+      `Status: ${transaction.status}`,
+    ].join('\n')
+
     const blob = new Blob([receiptText], { type: 'text/plain' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -48,137 +43,172 @@ ${methodLabel ? `Payment method: ${methodLabel}` : ''}
   }
 
   const handleShare = async () => {
+    const shareText = `PayXpress Receipt\nReference: ${transaction.reference}\nAmount: ${formatCurrency(
+      transaction.amount
+    )}\nStatus: ${transaction.status}`
+
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'PayXpress Receipt', text: receiptText })
-      } catch (error) {
-        console.error('Error sharing:', error)
+        await navigator.share({ title: 'PayXpress Receipt', text: shareText })
+      } catch {
+        // user dismissed the share sheet — nothing to recover
       }
     } else {
-      navigator.clipboard.writeText(receiptText)
-      alert('Receipt copied to clipboard')
+      navigator.clipboard.writeText(shareText)
     }
   }
 
-  const rows: { label: string; value: React.ReactNode }[] = [
-    { label: 'Reference', value: <span className="font-mono">{transaction.reference}</span> },
-    { label: 'Biller', value: billerLabel },
-    {
-      label: 'Date',
-      value: new Date(transaction.timestamp).toLocaleDateString('en-NG', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }),
-    },
-    {
-      label: 'Time',
-      value: new Date(transaction.timestamp).toLocaleTimeString('en-NG', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    },
-    {
-      label: 'Status',
-      value: (
-          <span className={`capitalize font-semibold ${isSuccess ? 'text-success' : 'text-destructive'}`}>
-            {transaction.status}
-          </span>
-      ),
-    },
-  ]
-  if (methodLabel) {
-    rows.push({
-      label: 'Payment method',
-      value: (
-          <span className="inline-flex items-center gap-1.5">
-            {transaction.paymentMethod === 'wallet' ? <Wallet size={13} /> : <CreditCard size={13} />}
-            {methodLabel}
-          </span>
-      ),
-    })
-  }
+  const statusIcon =
+    transaction.status === 'completed' ? (
+      <Check size={40} className="text-primary" strokeWidth={2.5} />
+    ) : transaction.status === 'failed' ? (
+      <XCircle size={40} className="text-destructive" />
+    ) : (
+      <Clock size={40} className="text-warning" />
+    )
+
+  const statusTint =
+    transaction.status === 'completed'
+      ? 'bg-primary-tint'
+      : transaction.status === 'failed'
+        ? 'bg-destructive/10'
+        : 'bg-secondary'
+
+  const statusColor =
+    transaction.status === 'completed'
+      ? 'text-primary'
+      : transaction.status === 'failed'
+        ? 'text-destructive'
+        : 'text-warning'
 
   return (
-      <div className="fixed inset-0 bg-black/50 ambient-blooms flex items-end sm:items-center sm:justify-center z-40">
-        <div className="w-full sm:max-w-sm glass-panel sm:rounded-2xl rounded-t-2xl p-5 space-y-5 max-h-[92vh] overflow-y-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">Transaction Receipt</h2>
-            <button
-                onClick={onClose}
-                aria-label="Close receipt"
-                className="w-9 h-9 flex items-center justify-center rounded-lg text-foreground hover:bg-secondary transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/50"
+      />
 
-          {/* Receipt body */}
-          <div className="bg-card border border-card-border rounded-2xl overflow-hidden elevation-1">
-            <div className="py-7 px-5 text-center space-y-4 border-b border-dashed border-card-border">
-              <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${
-                  isSuccess ? 'bg-primary-tint' : 'bg-destructive/10'
-              }`}>
-                {isSuccess ? (
-                    <Check size={32} className="text-success" strokeWidth={2.5} />
-                ) : (
-                    <ReceiptText size={28} className="text-destructive" strokeWidth={2} />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">
-                  {isSuccess ? 'Payment successful' : `Payment ${transaction.status}`}
-                </p>
-                <p className="text-3xl font-bold text-foreground tracking-tight">
-                  {formatCurrency(transaction.amount)}
-                </p>
-              </div>
+      <motion.div
+        initial={{ y: '100%', opacity: 0.6 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0.6 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 280 }}
+        className="relative w-full sm:max-w-sm bg-background rounded-t-2xl sm:rounded-2xl max-h-[92vh] overflow-y-auto"
+      >
+        <div className="px-5 pt-5 pb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground">Transaction Receipt</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close receipt"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-foreground hover:bg-secondary transition-colors"
+          >
+            <X size={19} />
+          </button>
+        </div>
+
+        <div className="px-5 pb-5">
+          <div className="glass rounded-2xl p-6">
+            <div className="flex justify-center mb-5">
+              <motion.div
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', damping: 16, stiffness: 260, delay: 0.1 }}
+                className={`w-20 h-20 rounded-full ${statusTint} flex items-center justify-center`}
+              >
+                {statusIcon}
+              </motion.div>
             </div>
 
-            <div className="p-5 space-y-3.5">
-              {rows.map((row) => (
-                  <div key={row.label} className="flex justify-between items-center gap-4">
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{row.label}</span>
-                    <span className="text-sm font-medium text-foreground text-right truncate">{row.value}</span>
-                  </div>
-              ))}
+            <div className="text-center mb-5">
+              <p className="text-xs text-muted-foreground mb-1">Status</p>
+              <p className={`text-xl font-bold capitalize ${statusColor}`}>{transaction.status}</p>
+            </div>
+
+            <div className="text-center border-t border-b border-card-border py-5 mb-5">
+              <p className="text-xs text-muted-foreground mb-1">Amount</p>
+              <p className="text-3xl font-bold text-foreground tracking-tight tabular-nums">
+                {formatCurrency(transaction.amount)}
+              </p>
+            </div>
+
+            <div className="space-y-3.5">
+              <div className="flex justify-between items-start gap-4">
+                <span className="text-xs text-muted-foreground flex-shrink-0">Biller</span>
+                <span className="text-sm font-semibold text-foreground text-right">
+                  {transaction.description}
+                </span>
+              </div>
+              <div className="flex justify-between items-center gap-4">
+                <span className="text-xs text-muted-foreground flex-shrink-0">Reference</span>
+                <span className="text-xs font-mono font-semibold text-foreground text-right break-all">
+                  {transaction.reference}
+                </span>
+              </div>
+              <div className="flex justify-between items-center gap-4">
+                <span className="text-xs text-muted-foreground flex-shrink-0">Date</span>
+                <span className="text-sm font-semibold text-foreground">
+                  {timestamp.toLocaleDateString('en-NG', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center gap-4">
+                <span className="text-xs text-muted-foreground flex-shrink-0">Time</span>
+                <span className="text-sm font-semibold text-foreground">
+                  {timestamp.toLocaleTimeString('en-NG', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center gap-4">
+                <span className="text-xs text-muted-foreground flex-shrink-0">Payment Method</span>
+                <span className="text-sm font-semibold text-foreground">{methodLabel}</span>
+              </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="grid grid-cols-3 gap-3">
-            <button
-                onClick={handleDownload}
-                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-card-border hover:border-primary/30 transition-colors"
+          <div className="grid grid-cols-3 gap-3 mt-5">
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={handleDownload}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border border-card-border hover:bg-secondary transition-colors"
             >
               <Download size={18} className="text-primary" />
               <span className="text-xs font-medium text-foreground">Download</span>
-            </button>
-            <button
-                onClick={handleShare}
-                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-card-border hover:border-primary/30 transition-colors"
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={handleShare}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border border-card-border hover:bg-secondary transition-colors"
             >
               <Share2 size={18} className="text-primary" />
               <span className="text-xs font-medium text-foreground">Share</span>
-            </button>
-            <button
-                onClick={() => navigator.clipboard.writeText(transaction.reference)}
-                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-card-border hover:border-primary/30 transition-colors"
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => navigator.clipboard.writeText(transaction.reference)}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border border-card-border hover:bg-secondary transition-colors"
             >
-              <ReceiptText size={18} className="text-primary" />
-              <span className="text-xs font-medium text-foreground">Copy ref</span>
-            </button>
+              <Check size={18} className="text-primary" />
+              <span className="text-xs font-medium text-foreground">Copy Ref</span>
+            </motion.button>
           </div>
 
-          <button
-              onClick={onClose}
-              className="w-full h-13 rounded-xl bg-primary text-primary-foreground font-semibold text-base transition-all duration-200 hover:bg-primary-dark active:scale-[0.98] elevation-1"
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={onClose}
+            className="w-full h-13 mt-4 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary-dark transition-colors elevation-1"
           >
             Done
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
+    </div>
   )
 }
