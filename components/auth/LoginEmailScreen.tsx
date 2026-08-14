@@ -29,7 +29,7 @@ export function LoginEmailScreen() {
     }
   }
 
-  const notFound = error.toLowerCase().includes('no account')
+  const noAccount = error.toLowerCase().includes('no account')
 
   return (
     <AuthLayout onBack={() => setAuthScreen('splash')} eyebrow="Log in">
@@ -48,7 +48,10 @@ export function LoginEmailScreen() {
             Email address
           </label>
           <div className="relative">
-            <Mail size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Mail
+              size={17}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               id="login-email"
               type="email"
@@ -65,12 +68,12 @@ export function LoginEmailScreen() {
 
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg"
           >
             {error}{' '}
-            {notFound && (
+            {noAccount && (
               <button
                 onClick={() => setAuthScreen('signup-email')}
                 className="underline font-semibold"
@@ -82,7 +85,8 @@ export function LoginEmailScreen() {
         )}
 
         <motion.button
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: isValidEmail && !loading ? 1.01 : 1 }}
+          whileTap={{ scale: isValidEmail && !loading ? 0.98 : 1 }}
           onClick={handleNext}
           disabled={!isValidEmail || loading}
           className="w-full h-13 rounded-xl bg-primary text-primary-foreground font-semibold text-base transition-colors duration-200 hover:bg-primary-dark disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed elevation-1 flex items-center justify-center gap-2"

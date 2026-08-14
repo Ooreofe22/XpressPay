@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
@@ -28,9 +28,7 @@ export function WelcomeBackScreen() {
     setPin(newPin)
     setError('')
 
-    if (digit && index < 3) {
-      inputRefs.current[index + 1]?.focus()
-    }
+    if (digit && index < 3) inputRefs.current[index + 1]?.focus()
 
     const full = newPin.join('')
     if (full.length === 4 && newPin.every((d) => d !== '')) {
@@ -59,7 +57,7 @@ export function WelcomeBackScreen() {
     }
   }
 
-  const initial = pendingEmail ? pendingEmail.charAt(0).toUpperCase() : '\u2022'
+  const initial = pendingEmail ? pendingEmail.charAt(0).toUpperCase() : '•'
   const maskedEmail = pendingEmail ?? ''
 
   return (
@@ -67,7 +65,7 @@ export function WelcomeBackScreen() {
       <div className="flex flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-4">
           <motion.div
-            initial={{ scale: 0.85, opacity: 0 }}
+            initial={{ scale: reduceMotion ? 1 : 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', damping: 18, stiffness: 260 }}
             className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2"
@@ -78,7 +76,7 @@ export function WelcomeBackScreen() {
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
               {isSettingNewPin ? 'Create a PIN' : 'Welcome back'}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1 break-all">
               {isSettingNewPin
                 ? `Set a 4-digit PIN to secure ${maskedEmail}`
                 : 'Enter your PIN to continue'}
@@ -94,33 +92,32 @@ export function WelcomeBackScreen() {
 
         <motion.div
           key={shakeKey}
-          animate={shakeKey && !reduceMotion ? { x: [0, -6, 5, -4, 3, 0] } : { x: 0 }}
-          transition={{ duration: 0.45, ease: [0.36, 0.07, 0.19, 0.97] }}
+          animate={
+            shakeKey > 0 && !reduceMotion ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : { x: 0 }
+          }
+          transition={{ duration: 0.45, ease: 'easeInOut' }}
           className="flex gap-3 justify-center"
         >
           {pin.map((digit, index) => (
-            <motion.div
+            <motion.input
               key={index}
-              animate={digit && !reduceMotion ? { scale: [1, 1.09, 1] } : { scale: 1 }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}
-            >
-              <input
-                ref={(el) => {
-                  inputRefs.current[index] = el
-                }}
-                type="password"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                disabled={loading}
-                aria-label={`PIN digit ${index + 1}`}
-                className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
-                  digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
-                }`}
-              />
-            </motion.div>
+              ref={(el: HTMLInputElement | null) => {
+                inputRefs.current[index] = el
+              }}
+              type="password"
+              inputMode="numeric"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleChange(index, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              disabled={loading}
+              aria-label={`PIN digit ${index + 1}`}
+              animate={digit && !reduceMotion ? { scale: [0.9, 1.06, 1] } : { scale: 1 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
+                digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
+              }`}
+            />
           ))}
         </motion.div>
 
@@ -132,13 +129,9 @@ export function WelcomeBackScreen() {
         )}
 
         {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg"
-          >
+          <div className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg">
             {error}
-          </motion.div>
+          </div>
         )}
 
         {isSettingNewPin && (
