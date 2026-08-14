@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useRef, useState } from 'react'
+import { motion } from 'motion/react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { Loader2 } from 'lucide-react'
-import { motion } from 'motion/react'
 
 // Shared final step for BOTH signup and login — reached from SignUpOTP after a
 // real account is created, and from LoginOTPScreen after a real login. The
@@ -59,22 +59,26 @@ export function WelcomeBackScreen() {
     }
   }
 
-  const maskedEmail = pendingEmail
-    ? pendingEmail.replace(/^(.{2}).*(@.*)$/, '$1••••$2')
-    : ''
+  const initial = pendingEmail ? pendingEmail.charAt(0).toUpperCase() : '•'
+  const maskedEmail = pendingEmail ?? ''
 
   return (
     <AuthLayout onBack={() => setAuthScreen('splash')}>
       <div className="flex flex-col items-center gap-8">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2 uppercase">
-            {pendingEmail ? pendingEmail.charAt(0) : '•'}
-          </div>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', damping: 15, stiffness: 240, delay: 0.05 }}
+            className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2"
+          >
+            {initial}
+          </motion.div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
               {isSettingNewPin ? 'Create a PIN' : 'Welcome back'}
@@ -94,16 +98,15 @@ export function WelcomeBackScreen() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={shake ? { x: [0, -6, 6, -4, 4, 0], opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-          transition={{ duration: shake ? 0.45 : 0.35, delay: shake ? 0 : 0.1 }}
+          animate={shake ? { x: [0, -6, 5, -4, 3, 0] } : { x: 0 }}
+          transition={{ duration: 0.45, ease: 'easeInOut' }}
           className="flex gap-3 justify-center"
         >
           {pin.map((digit, index) => (
             <motion.input
               key={index}
-              ref={(el: HTMLInputElement | null) => {
-                inputRefs.current[index] = el
+              ref={(el) => {
+                inputRefs.current[index] = el as HTMLInputElement | null
               }}
               type="password"
               inputMode="numeric"
@@ -113,9 +116,9 @@ export function WelcomeBackScreen() {
               onKeyDown={(e) => handleKeyDown(index, e)}
               disabled={loading}
               aria-label={`PIN digit ${index + 1}`}
-              animate={digit ? { scale: [0.88, 1.06, 1] } : { scale: 1 }}
+              animate={digit ? { scale: [0.86, 1.06, 1] } : { scale: 1 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
+              className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
                 digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
               }`}
             />
@@ -131,8 +134,8 @@ export function WelcomeBackScreen() {
 
         {error && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
             className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg"
           >
             {error}

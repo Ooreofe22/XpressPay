@@ -1,49 +1,56 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { motion } from 'motion/react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
-import { OtpInput, type OtpInputRef } from '@/components/auth/OtpInput'
+import { OtpInput, type OtpInputHandle } from '@/components/auth/OtpInput'
 import { Loader2, MailCheck } from 'lucide-react'
-import { motion } from 'motion/react'
 
 const RESEND_SECONDS = 60
-const OTP_LENGTH = 6
+
+function maskEmail(email: string | null): string {
+  if (!email) return 'your inbox'
+  const [local, domain] = email.split('@')
+  if (!domain) return email
+  const shown = local.slice(0, 2)
+  return `${shown}${'•'.repeat(Math.max(local.length - 2, 1))}@${domain}`
+}
 
 export function SignUpOTP() {
   const { setAuthScreen, verifySignupOtp, resendSignupOtp, pendingEmail } = useApp()
-  const [otp, setOtp] = useState<string[]>(new Array(OTP_LENGTH).fill(''))
+  const [otp, setOtp] = useState<string[]>(new Array(6).fill(''))
   const [countdown, setCountdown] = useState(RESEND_SECONDS)
   const [canResend, setCanResend] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [expired, setExpired] = useState(false)
+  const [error, setError] = useState('')
   const [shake, setShake] = useState(false)
-  const otpRef = useRef<OtpInputRef>(null)
+  const otpRef = useRef<OtpInputHandle>(null)
 
   useEffect(() => {
     if (countdown > 0) {
-      const t = setTimeout(() => setCountdown((c) => c - 1), 1000)
-      return () => clearTimeout(t)
+      const timer = setTimeout(() => setCountdown((c) => c - 1), 1000)
+      return () => clearTimeout(timer)
     }
     setCanResend(true)
   }, [countdown])
 
-  const handleVerify = async (otpString: string) => {
-    if (otpString.length !== OTP_LENGTH) return
+  const handleVerify = async (code?: string) => {
+    const otpString = code ?? otp.join('')
+    if (otpString.length !== 6 || loading) return
+
     setLoading(true)
-    setError(null)
+    setError('')
     try {
       await verifySignupOtp(otpString)
-      // Account exists server-side now. Hand off to the same screen login uses.
+      // Account exists server-side now. Hand off to the same screen login uses
+      // to finish authenticating — same component, no signup-specific finish.
       setAuthScreen('login-welcome')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Invalid code. Please try again.'
-      setExpired(/expired/i.test(msg))
-      setError(msg)
+      setError(err instanceof Error ? err.message : 'Invalid code. Please try again.')
       setShake(true)
       setTimeout(() => setShake(false), 500)
-      setOtp(new Array(OTP_LENGTH).fill(''))
+      setOtp(new Array(6).fill(''))
       otpRef.current?.focus()
     } finally {
       setLoading(false)
@@ -51,10 +58,10 @@ export function SignUpOTP() {
   }
 
   const handleResend = async () => {
+    if (!pendingEmail) return
     setCountdown(RESEND_SECONDS)
     setCanResend(false)
-    setError(null)
-    setExpired(false)
+    setError('')
     otpRef.current?.clear()
     try {
       await resendSignupOtp()
@@ -63,68 +70,61 @@ export function SignUpOTP() {
     }
   }
 
-  const maskedEmail = pendingEmail
-    ? pendingEmail.replace(/^(.{2}).*(@.*)$/, '$1••••$2')
-    : 'your inbox'
+  const expired = error.toLowerCase().includes('expired')
 
   return (
     <AuthLayout onBack={() => setAuthScreen('signup-email')} eyebrow="Create account · Step 2 of 2">
-      <div className="space-y-8">
+      <div className="space-y-9">
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="space-y-3"
         >
-          <span className="inline-flex w-12 h-12 rounded-2xl bg-primary-tint items-center justify-center mb-1">
-            <MailCheck size={22} className="text-primary" strokeWidth={2} />
+          <span className="inline-flex items-center gap-2 rounded-full bg-primary-tint px-3 py-1.5 text-xs font-semibold text-primary">
+            <MailCheck size={14} />
+            Check your inbox
           </span>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Check your inbox</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Enter your code</h1>
           <p className="text-muted-foreground text-sm leading-relaxed text-pretty">
-            We sent a {OTP_LENGTH}-digit code to{' '}
-            <span className="font-semibold text-foreground">{maskedEmail}</span>
+            We sent a 6-digit code to{' '}
+            <span className="font-semibold text-foreground">{maskEmail(pendingEmail)}</span>. It
+            expires in 10 minutes.
           </p>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
+          transition={{ duration: 0.35, delay: 0.08 }}
         >
           <OtpInput
             ref={otpRef}
             value={otp}
-            onChange={(next) => {
-              setOtp(next)
-              if (error) setError(null)
-            }}
+            onChange={setOtp}
             onComplete={handleVerify}
             disabled={loading}
             shake={shake}
-            error={error}
-            length={OTP_LENGTH}
+            hasError={Boolean(error)}
           />
         </motion.div>
 
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-sm text-destructive font-medium bg-destructive/10 px-4 py-2.5 rounded-lg"
           >
             {error}
             {expired && canResend && (
-              <>
-                {' '}
-                <button onClick={handleResend} className="underline font-semibold">
-                  Send a new code
-                </button>
-              </>
+              <button onClick={handleResend} className="ml-1.5 underline font-semibold">
+                Send a new code
+              </button>
             )}
           </motion.div>
         )}
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }}>
+        <div>
           {!canResend ? (
             <p className="text-sm text-muted-foreground">
               Resend code in{' '}
@@ -140,12 +140,11 @@ export function SignUpOTP() {
               Resend code
             </button>
           )}
-        </motion.div>
+        </div>
 
         <motion.button
-          onClick={() => handleVerify(otp.join(''))}
-          disabled={otp.join('').length !== OTP_LENGTH || loading}
-          whileHover={{ scale: 1.01 }}
+          onClick={() => handleVerify()}
+          disabled={otp.join('').length !== 6 || loading}
           whileTap={{ scale: 0.98 }}
           className="w-full h-13 rounded-xl bg-primary text-primary-foreground font-semibold text-base transition-colors duration-200 hover:bg-primary-dark disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed elevation-1 flex items-center justify-center gap-2"
         >
@@ -153,8 +152,14 @@ export function SignUpOTP() {
           {loading ? 'Verifying…' : 'Verify'}
         </motion.button>
 
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Codes expire after a few minutes. If nothing arrives, check your spam folder.
+        <p className="text-xs text-muted-foreground text-center">
+          Wrong email?{' '}
+          <button
+            onClick={() => setAuthScreen('signup-email')}
+            className="text-primary font-semibold hover:underline"
+          >
+            Change it
+          </button>
         </p>
       </div>
     </AuthLayout>
