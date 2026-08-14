@@ -1,9 +1,9 @@
 'use client'
 
 import React from 'react'
+import { motion } from 'motion/react'
 import { Logo } from '@/components/ui/Logo'
 import { ArrowLeft, ShieldCheck, Zap, ReceiptText, CreditCard } from 'lucide-react'
-import { motion } from 'motion/react'
 
 interface AuthLayoutProps {
   children: React.ReactNode
@@ -22,25 +22,16 @@ const highlights = [
 /**
  * Web-first split-screen shell for all auth screens.
  * Left: persistent brand panel (desktop only). Right: the form content, centered
- * over a soft ambient wash so glass surfaces have something to refract.
+ * over the ambient mesh so glass surfaces have something to refract.
  */
 export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
   return (
     <div className="min-h-screen flex bg-background ambient-mesh">
-      {/* ── Brand panel (desktop) ─────────────────────── */}
+      {/* ── Brand panel (desktop) ────────────────────── */}
       <aside className="relative hidden lg:flex lg:w-[46%] xl:w-[52%] splash-gradient flex-col justify-between p-10 xl:p-14 overflow-hidden">
-        <div
-          aria-hidden
-          className="absolute -right-24 -top-24 w-96 h-96 rounded-full border border-white/10"
-        />
-        <div
-          aria-hidden
-          className="absolute -right-10 top-16 w-72 h-72 rounded-full border border-white/10"
-        />
-        <div
-          aria-hidden
-          className="absolute -left-24 bottom-[-12%] w-[30rem] h-[30rem] rounded-full bg-white/[0.04] blur-3xl"
-        />
+        <div aria-hidden className="absolute -right-24 -top-24 w-96 h-96 rounded-full border border-white/10" />
+        <div aria-hidden className="absolute -right-10 top-16 w-72 h-72 rounded-full border border-white/10" />
+        <div aria-hidden className="absolute -left-24 bottom-[-15%] w-[28rem] h-[28rem] rounded-full bg-white/[0.04] blur-3xl" />
 
         <div className="relative flex items-center gap-2.5">
           <Logo size="sm" variant="inverse" />
@@ -72,7 +63,7 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
             {highlights.map(({ icon: Icon, label, desc }, i) => (
               <motion.li
                 key={label}
-                initial={{ opacity: 0, x: -18 }}
+                initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, delay: 0.16 + i * 0.08 }}
                 className="flex items-start gap-3.5"
@@ -96,13 +87,14 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
       </aside>
 
       {/* ── Form column ───────────────────────────── */}
-      <div className="relative z-10 flex-1 flex flex-col min-h-screen">
+      <div className="relative flex-1 flex flex-col min-h-screen z-10">
         <div className="flex items-center justify-between px-5 sm:px-8 h-16 flex-shrink-0">
           {onBack ? (
             <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.92 }}
               onClick={onBack}
               aria-label="Go back"
-              whileTap={{ scale: 0.92 }}
               className="w-10 h-10 flex items-center justify-center text-foreground bg-secondary hover:bg-secondary/70 rounded-full transition-colors"
             >
               <ArrowLeft size={20} />
@@ -111,7 +103,6 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
             <span />
           )}
 
-          {/* Brand shown on mobile where the panel is hidden */}
           <div className="flex items-center gap-2 lg:invisible">
             <Logo size="sm" variant="brand" />
             <span className="text-foreground font-bold text-base tracking-tight">PayXpress</span>

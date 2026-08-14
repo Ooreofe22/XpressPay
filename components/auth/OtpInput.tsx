@@ -1,35 +1,36 @@
 'use client'
 
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 
 interface OtpInputProps {
   value: string[]
   onChange: (value: string[]) => void
   onComplete?: (otp: string) => void
   disabled?: boolean
+  /** Set true briefly to shake the row — e.g. after a rejected code. */
   shake?: boolean
-  hasError?: boolean
+  invalid?: boolean
   length?: number
 }
 
-export interface OtpInputRef {
+export interface OtpInputHandle {
   focus: () => void
   clear: () => void
 }
 
 /**
- * Shared 6-box OTP field used by both the signup and login verification
- * screens. Handles auto-advance, backspace-to-previous, full-code paste, and a
- * per-digit fill animation. Shake-on-error is driven by the `shake` prop so the
- * parent controls when it fires (i.e. only on a rejected code, not on any
- * re-render).
+ * Segmented OTP entry shared by the signup and login verification screens.
+ * Handles auto-advance, backspace-to-previous, full-code paste, and a per-digit
+ * fill animation. All motion collapses to a plain state change when the user
+ * prefers reduced motion.
  */
-export const OtpInput = forwardRef<OtpInputRef, OtpInputProps>(function OtpInput(
-  { value, onChange, onComplete, disabled, shake, hasError, length = 6 },
+export const OtpInput = forwardRef<OtpInputHandle, OtpInputProps>(function OtpInput(
+  { value, onChange, onComplete, disabled, shake, invalid, length = 6 },
   ref
 ) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const reduceMotion = useReducedMotion()
 
   useImperativeHandle(ref, () => ({
     focus: () => inputRefs.current[0]?.focus(),
@@ -43,9 +44,9 @@ export const OtpInput = forwardRef<OtpInputRef, OtpInputProps>(function OtpInput
     inputRefs.current[0]?.focus()
   }, [])
 
-  const handleChange = (index: number, rawValue: string) => {
+  const handleChange = (index: number, raw: string) => {
     if (disabled) return
-    const digit = rawValue.replace(/\D/g, '').slice(-1)
+    const digit = raw.replace(/\D/g, '').slice(-1)
     const next = [...value]
     next[index] = digit
     onChange(next)
@@ -88,7 +89,7 @@ export const OtpInput = forwardRef<OtpInputRef, OtpInputProps>(function OtpInput
 
   return (
     <motion.div
-      animate={shake ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }}
+      animate={shake && !reduceMotion ? { x: [0, -6, 6, -4, 4, 0] } : { x: 0 }}
       transition={{ duration: 0.45, ease: 'easeInOut' }}
       className="flex gap-2.5 justify-between sm:justify-start"
     >
@@ -104,16 +105,17 @@ export const OtpInput = forwardRef<OtpInputRef, OtpInputProps>(function OtpInput
             inputMode="numeric"
             autoComplete={index === 0 ? 'one-time-code' : 'off'}
             maxLength={1}
-            value={value[index] || ''}
+            value={value[index] ?? ''}
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
             disabled={disabled}
             aria-label={`Digit ${index + 1}`}
-            animate={filled ? { scale: [0.85, 1.06, 1] } : { scale: 1 }}
+            aria-invalid={invalid || undefined}
+            animate={reduceMotion ? undefined : { scale: filled ? [0.92, 1.06, 1] : 1 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors duration-200 focus:outline-none focus:ring-2 disabled:opacity-50 ${
-              hasError
+            className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors focus:outline-none focus:ring-2 disabled:opacity-50 ${
+              invalid
                 ? 'border-destructive bg-destructive/5 focus:border-destructive focus:ring-destructive/15'
                 : filled
                   ? 'border-primary bg-primary-tint focus:border-primary focus:ring-primary/15'
