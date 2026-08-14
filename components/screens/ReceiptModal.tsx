@@ -2,8 +2,6 @@
 
 import React from 'react'
 import { motion } from 'motion/react'
-import { Card, CardContent } from '@/components/ui/Card'
-import { Button } from '@/components/ui/button'
 import { Check, Download, Share2, X, Wallet, CreditCard } from 'lucide-react'
 import { Transaction } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -13,41 +11,49 @@ interface ReceiptModalProps {
   onClose: () => void
 }
 
-function methodLabel(method?: Transaction['paymentMethod']) {
-  if (method === 'wallet') return 'Wallet balance'
-  if (method === 'paystack') return 'Paystack'
-  return '—'
+const STATUS_COPY: Record<Transaction['status'], string> = {
+  completed: 'Successful',
+  pending: 'Processing',
+  failed: 'Failed',
 }
 
 export function ReceiptModal({ transaction, onClose }: ReceiptModalProps) {
   const timestamp = new Date(transaction.timestamp)
-  const isCompleted = transaction.status === 'completed'
+  const isWallet = transaction.paymentMethod === 'wallet'
+  const methodLabel = isWallet ? 'Wallet balance' : 'Paystack'
+
+  const statusTone =
+    transaction.status === 'completed'
+      ? 'text-primary'
+      : transaction.status === 'failed'
+        ? 'text-destructive'
+        : 'text-warning'
 
   const handleDownload = () => {
     const receiptText = `
 PayXpress Receipt
-================
-Reference: ${transaction.reference}
-Biller: ${transaction.description}
-Amount: ${formatCurrency(transaction.amount)}
-Payment method: ${methodLabel(transaction.paymentMethod)}
-Date: ${timestamp.toLocaleString('en-NG')}
-Status: ${transaction.status}
+=================
+Reference:      ${transaction.reference}
+Biller:         ${transaction.description}
+Amount:         ${formatCurrency(transaction.amount)}
+Payment method: ${methodLabel}
+Date:           ${timestamp.toLocaleString('en-NG')}
+Status:         ${STATUS_COPY[transaction.status]}
     `.trim()
 
     const blob = new Blob([receiptText], { type: 'text/plain' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `receipt-${transaction.reference}.txt`
+    a.download = `payxpress-receipt-${transaction.reference}.txt`
     a.click()
     window.URL.revokeObjectURL(url)
   }
 
   const handleShare = async () => {
-    const shareText = `PayXpress Receipt\nReference: ${transaction.reference}\nAmount: ${formatCurrency(
+    const shareText = `PayXpress receipt\n${transaction.description}\n${formatCurrency(
       transaction.amount
-    )}\nStatus: ${transaction.status}`
+    )}\nRef: ${transaction.reference}\nStatus: ${STATUS_COPY[transaction.status]}`
 
     if (navigator.share) {
       try {
@@ -76,128 +82,125 @@ Status: ${transaction.status}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0.6 }}
         transition={{ type: 'spring', damping: 30, stiffness: 280 }}
-        className="relative w-full sm:max-w-sm bg-background rounded-t-2xl sm:rounded-2xl p-4 space-y-4 max-h-[92vh] overflow-y-auto safe-bottom"
+        className="relative w-full sm:max-w-sm max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-background"
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">Transaction Receipt</h2>
-          <motion.button
+        <div className="px-5 pt-5 pb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground">Receipt</h2>
+          <button
             onClick={onClose}
-            whileTap={{ scale: 0.9 }}
             aria-label="Close receipt"
-            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-foreground hover:bg-secondary transition-colors"
           >
-            <X size={22} className="text-foreground" />
-          </motion.button>
+            <X size={19} />
+          </button>
         </div>
 
-        <Card className="card-gradient">
-          <CardContent className="py-8 space-y-6">
-            <div className="flex justify-center">
+        <div className="px-5 pb-6">
+          <div className="glass rounded-2xl overflow-hidden">
+            <div className="px-6 pt-8 pb-6 text-center border-b border-dashed border-card-border">
               <motion.div
                 initial={{ scale: 0.7, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring', damping: 14, stiffness: 240, delay: 0.1 }}
-                className={`w-20 h-20 rounded-full flex items-center justify-center ${
-                  isCompleted ? 'bg-primary-tint' : 'bg-secondary'
+                className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                  transaction.status === 'completed' ? 'bg-primary-tint' : 'bg-secondary'
                 }`}
               >
-                <Check size={44} className={isCompleted ? 'text-primary' : 'text-muted-foreground'} />
+                <Check
+                  size={30}
+                  strokeWidth={2.5}
+                  className={transaction.status === 'completed' ? 'text-primary' : 'text-muted-foreground'}
+                />
               </motion.div>
-            </div>
 
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Transaction status</p>
-              <p
-                className={`text-2xl font-bold capitalize ${
-                  isCompleted ? 'text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                {transaction.status}
+              <p className={`text-sm font-semibold mb-1 ${statusTone}`}>
+                {STATUS_COPY[transaction.status]}
               </p>
-            </div>
-
-            <div className="text-center border-t border-b border-dashed border-card-border py-6">
-              <p className="text-sm text-muted-foreground mb-1">Amount</p>
-              <p className="text-4xl font-bold text-foreground tracking-tight">
+              <p className="text-4xl font-bold text-foreground tracking-tight tabular-nums">
                 {formatCurrency(transaction.amount)}
               </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-start gap-4">
-                <span className="text-sm text-muted-foreground flex-shrink-0">Biller</span>
-                <span className="text-sm font-medium text-foreground text-right">
-                  {transaction.description}
-                </span>
-              </div>
-              <div className="flex justify-between items-center gap-4">
-                <span className="text-sm text-muted-foreground flex-shrink-0">Reference</span>
-                <span className="text-xs font-mono font-medium text-foreground text-right break-all">
-                  {transaction.reference}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Payment method</span>
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
-                  {transaction.paymentMethod === 'wallet' ? (
+            <div className="px-6 py-5 space-y-3.5">
+              <Row label="Biller" value={transaction.description} />
+              <Row label="Reference" value={transaction.reference} mono />
+              <Row
+                label="Date"
+                value={timestamp.toLocaleDateString('en-NG', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              />
+              <Row label="Time" value={timestamp.toLocaleTimeString('en-NG')} />
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-xs text-muted-foreground flex-shrink-0">Payment method</span>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                  {isWallet ? (
                     <Wallet size={14} className="text-primary" />
-                  ) : transaction.paymentMethod === 'paystack' ? (
+                  ) : (
                     <CreditCard size={14} className="text-accent" />
-                  ) : null}
-                  {methodLabel(transaction.paymentMethod)}
+                  )}
+                  {methodLabel}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Date</span>
-                <span className="text-sm font-medium text-foreground">
-                  {timestamp.toLocaleDateString('en-NG', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Time</span>
-                <span className="text-sm font-medium text-foreground">
-                  {timestamp.toLocaleTimeString('en-NG')}
-                </span>
-              </div>
+              <Row label="Status" value={STATUS_COPY[transaction.status]} />
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 mt-5">
+            <ActionButton icon={<Download size={18} />} label="Download" onClick={handleDownload} />
+            <ActionButton icon={<Share2 size={18} />} label="Share" onClick={handleShare} />
+            <ActionButton
+              icon={<span className="text-base leading-none">⌗</span>}
+              label="Copy ref"
+              onClick={() => navigator.clipboard.writeText(transaction.reference)}
+            />
+          </div>
+
           <motion.button
-            onClick={handleDownload}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-xl border border-card-border hover:bg-secondary transition-colors"
+            whileTap={{ scale: 0.98 }}
+            onClick={onClose}
+            className="w-full h-13 mt-4 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary-dark transition-colors elevation-1"
           >
-            <Download size={19} className="text-primary" />
-            <span className="text-xs font-medium text-foreground">Download</span>
-          </motion.button>
-          <motion.button
-            onClick={handleShare}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-xl border border-card-border hover:bg-secondary transition-colors"
-          >
-            <Share2 size={19} className="text-primary" />
-            <span className="text-xs font-medium text-foreground">Share</span>
-          </motion.button>
-          <motion.button
-            onClick={() => navigator.clipboard.writeText(transaction.reference)}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-xl border border-card-border hover:bg-secondary transition-colors"
-          >
-            <Check size={19} className="text-primary" />
-            <span className="text-xs font-medium text-foreground">Copy ref</span>
+            Done
           </motion.button>
         </div>
-
-        <Button variant="primary" size="lg" className="w-full" onClick={onClose}>
-          Done
-        </Button>
       </motion.div>
     </div>
+  )
+}
+
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="text-xs text-muted-foreground flex-shrink-0">{label}</span>
+      <span
+        className={`text-sm font-semibold text-foreground text-right ${mono ? 'font-mono text-xs' : ''}`}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function ActionButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className="flex flex-col items-center gap-2 py-3 rounded-xl bg-card border border-card-border text-primary hover:border-primary/30 transition-colors"
+    >
+      {icon}
+      <span className="text-xs font-medium text-foreground">{label}</span>
+    </motion.button>
   )
 }
