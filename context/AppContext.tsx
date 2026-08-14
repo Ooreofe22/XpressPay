@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Transaction, BankContact, Card, BillBeneficiary } from '@/types'
 import {
-  submitBvn as apiSubmitBvn,
   requestSignupOtp as apiRequestSignupOtp,
   verifySignupOtp as apiVerifySignupOtp,
   requestLoginOtp as apiRequestLoginOtp,
@@ -13,15 +12,20 @@ import {
   refreshAccessToken,
   TokenResponse,
 } from '@/lib/auth-api'
-import { fetchBillPaymentHistory, fetchBillBeneficiaries, createBillBeneficiary } from '@/lib/api'
-import { setOrValidateLocalPin, isFirstTimePinForPhone } from '@/lib/localPin'
+import {
+  fetchBillPaymentHistory,
+  fetchBillBeneficiaries,
+  createBillBeneficiary,
+  getWalletBalance,
+} from '@/lib/api'
+import { setOrValidateLocalPin, isFirstTimePinForUser } from '@/lib/localPin'
 
 type AuthScreen =
     | 'splash'
-    | 'login-phone'
+    | 'login-email'
     | 'login-otp'
     | 'login-welcome'
-    | 'signup-bvn'
+    | 'signup-email'
     | 'signup-otp'
     | 'dashboard'
 
@@ -36,22 +40,23 @@ interface AppContextType {
   // true while we're attempting to restore a session from localStorage on
   // first mount (e.g. after redirecting back from Paystack). Screens that
   // gate on isAuthenticated should wait for this to go false before
-  // redirecting to or they'll bounce a valid session for a frame.
+  // redirecting or they'll bounce a valid session for a frame.
   rehydrating: boolean
 
-  // phone currently mid-flow (set by SignUpBVN/LoginPhoneScreen, read by the OTP + PIN screens)
-  pendingPhone: string | null
-  // true if this device has no local PIN saved for pendingPhone yet — lets WelcomeBackScreen
-  // show "Create a PIN" instead of "Enter your PIN"
+  // email currently mid-flow (set by SignUpEmailScreen/LoginEmailScreen, read
+  // by the OTP + PIN screens)
+  pendingEmail: string | null
+  // true if this device has no local PIN saved for pendingEmail yet — lets
+  // WelcomeBackScreen show "Create a PIN" instead of "Enter your PIN"
   isSettingNewPin: boolean
 
   // -- Signup --
-  requestSignupOtp: (bvn: string, phone: string) => Promise<void>
+  requestSignupOtp: (email: string) => Promise<void>
   resendSignupOtp: () => Promise<void>
   verifySignupOtp: (otp: string) => Promise<void>
 
   // -- Login --
-  requestLoginOtp: (phone: string) => Promise<void>
+  requestLoginOtp: (email: string) => Promise<void>
   verifyLoginOtp: (otp: string) => Promise<void>
 
   // -- Shared final step (WelcomeBackScreen) --
@@ -61,6 +66,9 @@ interface AppContextType {
   addTransaction: (transaction: Transaction) => void
   transactions: Transaction[]
   refreshTransactionHistory: () => Promise<void>
+  // Re-fetch GET /wallet/balance and update user.accountBalance — call after
+  // any successful payment (wallet debit or Paystack return).
+  refreshWalletBalance: () => Promise<void>
   bankContacts: BankContact[]
   addBankContact: (contact: BankContact) => void
   cards: Card[]
@@ -106,25 +114,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [billerBeneficiaries, setBillerBeneficiaries] = useState<BillBeneficiary[]>([])
 
   // mid-flow state — not persisted, cleared once completeLogin() finishes
-  const [pendingPhone, setPendingPhone] = useState<string | null>(null)
-  const [pendingBvn, setPendingBvn] = useState<string | null>(null)
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   const [pendingTokens, setPendingTokens] = useState<TokenResponse | null>(null)
 
   // true until the mount-time rehydration attempt below finishes (success,
   // failure, or "nothing to restore") — see rehydrate() effect
   const [rehydrating, setRehydrating] = useState(true)
 
-  const isSettingNewPin = pendingPhone ? isFirstTimePinForPhone(pendingPhone) : true
+  const isSettingNewPin = pendingEmail ? isFirstTimePinForUser(pendingEmail) : true
 
   // -- Session rehydration --
   //
   // A full-page navigation to Paystack (or any hard reload) wipes all React
-  // state, including `user`. Tokens survive in localStorage, but nothing was
-  // reading them back out on mount — so the app always came back up as
-  // logged-out, even with valid tokens sitting right there. This effect
+  // state, including `user`. Tokens survive in localStorage; this effect
   // reconstructs `user` from the stored access token (decoding its payload
-  // for id/phone, then re-fetching wallet data) and falls back to
-  // /auth/refresh if the access token has expired (15 min lifetime).
+  // for id/email, then re-fetching wallet data) and falls back to
+  // /auth/refresh if the access token has expired.
 
   useEffect(() => {
     const rehydrate = async () => {
@@ -178,21 +183,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const applyRehydratedUser = (
-      claims: { sub: string; phone: string },
+      claims: { sub: string; email?: string },
       walletBalance: { balance: number },
       walletAccounts: { accountNumber: string }[]
   ) => {
-    const newUser: User = {
-      id: claims.sub,
-      name: `User ${claims.phone.slice(-4)}`, // placeholder — backend collects no name
-      email: `${claims.phone}@payxpress.ng`, // placeholder, matches backend's Paystack email convention
-      phone: claims.phone,
-      accountNumber: walletAccounts[0]?.accountNumber ?? '—',
-      accountBalance: walletBalance.balance,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${claims.phone}`,
-      kyc: { verified: true, level: 'bronze' },
-    }
-    setUser(newUser)
+    const email = claims.email ?? ''
+    setUser(buildUser(claims.sub, email, walletBalance.balance, walletAccounts))
     setAuthScreen('dashboard')
     refreshTransactionHistory()
     refreshBillerBeneficiaries()
@@ -200,28 +196,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // -- Signup --
 
-  const requestSignupOtp = async (bvn: string, phone: string) => {
-    await apiSubmitBvn(bvn) // format-check only, throws on invalid shape (11 digits)
-    const normalizedPhone = normalizePhone(phone)
-    await apiRequestSignupOtp(normalizedPhone)
-    setPendingBvn(bvn)
-    setPendingPhone(normalizedPhone)
+  const requestSignupOtp = async (email: string) => {
+    const normalized = normalizeEmail(email)
+    await apiRequestSignupOtp(normalized)
+    setPendingEmail(normalized)
   }
 
-  // Resend uses whatever bvn/phone are already in state — does NOT re-collect
-  // or overwrite them, unlike requestSignupOtp which is only for the first send.
+  // Resend uses whatever email is already in state — does NOT re-collect or
+  // overwrite it, unlike requestSignupOtp which is only for the first send.
   const resendSignupOtp = async () => {
-    if (!pendingPhone) {
-      throw new Error('Missing phone number — please start over')
+    if (!pendingEmail) {
+      throw new Error('Missing email address — please start over')
     }
-    await apiRequestSignupOtp(pendingPhone)
+    await apiRequestSignupOtp(pendingEmail)
   }
 
   const verifySignupOtp = async (otp: string) => {
-    if (!pendingPhone || !pendingBvn) {
+    if (!pendingEmail) {
       throw new Error('Missing signup details — please start over')
     }
-    const tokens = await apiVerifySignupOtp(pendingPhone, pendingBvn, otp)
+    const tokens = await apiVerifySignupOtp(pendingEmail, otp)
     setPendingTokens(tokens)
     // deliberately does NOT set isAuthenticated yet — WelcomeBackScreen (the
     // exact same screen/component login uses) finishes the job via completeLogin()
@@ -229,17 +223,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // -- Login --
 
-  const requestLoginOtp = async (phone: string) => {
-    const normalizedPhone = normalizePhone(phone)
-    await apiRequestLoginOtp(normalizedPhone)
-    setPendingPhone(normalizedPhone)
+  const requestLoginOtp = async (email: string) => {
+    const normalized = normalizeEmail(email)
+    await apiRequestLoginOtp(normalized)
+    setPendingEmail(normalized)
   }
 
   const verifyLoginOtp = async (otp: string) => {
-    if (!pendingPhone) {
-      throw new Error('Missing phone number — please start over')
+    if (!pendingEmail) {
+      throw new Error('Missing email address — please start over')
     }
-    const tokens = await apiVerifyLoginOtp(pendingPhone, otp)
+    const tokens = await apiVerifyLoginOtp(pendingEmail, otp)
     setPendingTokens(tokens)
   }
 
@@ -247,39 +241,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // the user arrived via signup or login --
 
   const completeLogin = async (pin: string) => {
-    if (!pendingTokens || !pendingPhone) {
+    if (!pendingTokens || !pendingEmail) {
       throw new Error('Session expired — please log in again')
     }
 
     // throws "Invalid PIN. Try again." on mismatch; silently records it on first use
-    await setOrValidateLocalPin(pendingPhone, pin)
+    await setOrValidateLocalPin(pendingEmail, pin)
 
     localStorage.setItem('payxpress_access_token', pendingTokens.accessToken)
     localStorage.setItem('payxpress_refresh_token', pendingTokens.refreshToken)
 
-    // Backend only stores { id, phone, status } — no name/email/avatar exist server-side.
-    // Balance/account number are real (from the wallet endpoints); everything else here
-    // is an honest placeholder, not real backend data.
+    // Balance/account number are real (from the wallet endpoints); name/avatar
+    // are honest placeholders derived from the email — backend collects no name.
     const [walletBalance, walletAccounts] = await Promise.all([
       fetchWalletBalance(pendingTokens.accessToken),
       fetchWalletAccounts(pendingTokens.accessToken),
     ])
 
-    const newUser: User = {
-      id: pendingTokens.userId,
-      name: `User ${pendingTokens.phone.slice(-4)}`, // placeholder — backend collects no name
-      email: `${pendingTokens.phone}@payxpress.ng`, // placeholder, matches backend's Paystack email convention
-      phone: pendingTokens.phone,
-      accountNumber: walletAccounts[0]?.accountNumber ?? '—',
-      accountBalance: walletBalance.balance,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${pendingTokens.phone}`,
-      kyc: { verified: true, level: 'bronze' },
-    }
-
-    setUser(newUser)
+    setUser(
+        buildUser(
+            pendingTokens.userId,
+            pendingTokens.email || pendingEmail,
+            walletBalance.balance,
+            walletAccounts
+        )
+    )
     setPendingTokens(null)
-    setPendingPhone(null)
-    setPendingBvn(null)
+    setPendingEmail(null)
     setAuthScreen('dashboard')
 
     // Fire-and-forget: populate real bill payment history and saved
@@ -320,6 +308,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setTransactions(history)
     } catch (err) {
       console.error('Could not refresh transaction history:', err)
+    }
+  }
+
+  // Re-fetch the wallet balance after any successful payment. Failures are
+  // swallowed — the next refresh/history pull will correct the display.
+  const refreshWalletBalance = async () => {
+    try {
+      const { balance } = await getWalletBalance()
+      setUser((prev) => (prev ? { ...prev, accountBalance: balance } : null))
+    } catch (err) {
+      console.error('Could not refresh wallet balance:', err)
     }
   }
 
@@ -368,7 +367,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             authScreen,
             setAuthScreen,
             rehydrating,
-            pendingPhone,
+            pendingEmail,
             isSettingNewPin,
             requestSignupOtp,
             resendSignupOtp,
@@ -380,6 +379,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             addTransaction,
             transactions,
             refreshTransactionHistory,
+            refreshWalletBalance,
             bankContacts,
             addBankContact,
             cards,
@@ -398,17 +398,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-function normalizePhone(rawPhone: string): string {
-  let digits = rawPhone.replace(/\D/g, '')
-  if (digits.startsWith('0')) digits = digits.slice(1)
-  return digits.startsWith('234') ? `+${digits}` : `+234${digits}`
+function normalizeEmail(rawEmail: string): string {
+  return rawEmail.trim().toLowerCase()
+}
+
+// Backend stores no name/avatar — derive honest placeholders from the email.
+function buildUser(
+    id: string,
+    email: string,
+    balance: number,
+    walletAccounts: { accountNumber: string }[]
+): User {
+  const localPart = email.split('@')[0] || 'user'
+  const displayName = localPart
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((w) => w[0].toUpperCase() + w.slice(1))
+      .join(' ') || 'PayXpress User'
+
+  return {
+    id,
+    name: displayName,
+    email,
+    accountNumber: walletAccounts[0]?.accountNumber ?? '—',
+    accountBalance: balance,
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
+    kyc: { verified: true, level: 'bronze' },
+  }
 }
 
 // Reads the payload (2nd segment) of a JWT without verifying its signature.
-// Safe here because it's only used to pre-fill display data (id, phone) —
+// Safe here because it's only used to pre-fill display data (id, email) —
 // every real request still goes through the backend's JwtAuthFilter, which
 // verifies the signature server-side. Returns null if the token is malformed.
-function decodeJwtPayload(token: string): { sub: string; phone: string } | null {
+function decodeJwtPayload(token: string): { sub: string; email?: string } | null {
   try {
     const payload = token.split('.')[1]
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
