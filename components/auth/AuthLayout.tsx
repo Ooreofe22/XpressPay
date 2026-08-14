@@ -22,12 +22,12 @@ const highlights = [
 /**
  * Web-first split-screen shell for all auth screens.
  * Left: persistent brand panel (desktop only). Right: the form content, centered
- * over the ambient gradient mesh so glass surfaces have something to refract.
+ * over a soft ambient wash so glass surfaces have something to refract.
  */
 export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
   return (
     <div className="min-h-screen flex bg-background ambient-mesh">
-      {/* ── Brand panel (desktop) ────────────────────── */}
+      {/* ── Brand panel (desktop) ─────────────────────── */}
       <aside className="relative hidden lg:flex lg:w-[46%] xl:w-[52%] splash-gradient flex-col justify-between p-10 xl:p-14 overflow-hidden">
         <div
           aria-hidden
@@ -39,7 +39,7 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
         />
         <div
           aria-hidden
-          className="absolute -left-24 -bottom-24 w-[28rem] h-[28rem] rounded-full bg-white/[0.04] blur-3xl"
+          className="absolute -left-24 bottom-[-12%] w-[30rem] h-[30rem] rounded-full bg-white/[0.04] blur-3xl"
         />
 
         <div className="relative flex items-center gap-2.5">
@@ -95,14 +95,13 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
         </p>
       </aside>
 
-      {/* ── Form column ──────────────────────────── */}
+      {/* ── Form column ───────────────────────────── */}
       <div className="relative z-10 flex-1 flex flex-col min-h-screen">
         <div className="flex items-center justify-between px-5 sm:px-8 h-16 flex-shrink-0">
           {onBack ? (
             <motion.button
               onClick={onBack}
               aria-label="Go back"
-              whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.92 }}
               className="w-10 h-10 flex items-center justify-center text-foreground bg-secondary hover:bg-secondary/70 rounded-full transition-colors"
             >
@@ -112,6 +111,7 @@ export function AuthLayout({ children, onBack, eyebrow }: AuthLayoutProps) {
             <span />
           )}
 
+          {/* Brand shown on mobile where the panel is hidden */}
           <div className="flex items-center gap-2 lg:invisible">
             <Logo size="sm" variant="brand" />
             <span className="text-foreground font-bold text-base tracking-tight">PayXpress</span>
