@@ -4,10 +4,10 @@ import React, { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useApp } from '@/context/AppContext'
 import { SplashScreen } from '@/components/auth/SplashScreen'
-import { LoginEmailScreen } from '@/components/auth/LoginEmailScreen'
+import { LoginPhoneScreen } from '@/components/auth/LoginPhoneScreen'
 import { LoginOTPScreen } from '@/components/auth/LoginOTPScreen'
 import { WelcomeBackScreen } from '@/components/auth/WelcomeBackScreen'
-import { SignUpEmailScreen } from '@/components/auth/SignUpEmailScreen'
+import { SignUpBVN } from '@/components/auth/SignUpBVN'
 import { SignUpOTP } from '@/components/auth/SignUpOTP'
 import { AppShell } from '@/components/layout/AppShell'
 import { BottomNavigation } from '@/components/layout/BottomNavigation'
@@ -22,8 +22,8 @@ function ScreenParamHandler() {
 
     useEffect(() => {
         const screen = searchParams.get('screen')
-        if (screen === 'login-email') {
-            setAuthScreen('login-email')
+        if (screen === 'login-phone') {
+            setAuthScreen('login-phone')
         }
     }, [searchParams, setAuthScreen])
 
@@ -45,10 +45,10 @@ function AppContent() {
         return (
             <>
                 {authScreen === 'splash' && <SplashScreen />}
-                {authScreen === 'login-email' && <LoginEmailScreen />}
+                {authScreen === 'login-phone' && <LoginPhoneScreen />}
                 {authScreen === 'login-otp' && <LoginOTPScreen />}
                 {authScreen === 'login-welcome' && <WelcomeBackScreen />}
-                {authScreen === 'signup-email' && <SignUpEmailScreen />}
+                {authScreen === 'signup-bvn' && <SignUpBVN />}
                 {authScreen === 'signup-otp' && <SignUpOTP />}
             </>
         )

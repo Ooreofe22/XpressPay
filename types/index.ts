@@ -2,7 +2,7 @@ export interface User {
   id: string
   name: string
   email: string
-  phone?: string
+  phone: string
   accountNumber: string
   accountBalance: number
   avatar: string
@@ -21,7 +21,6 @@ export interface Transaction {
   timestamp: Date
   status: 'pending' | 'completed' | 'failed'
   reference: string
-  paymentMethod?: 'wallet' | 'paystack'
 }
 
 export interface BankContact {
@@ -54,7 +53,7 @@ export interface Airtime {
 export interface Biller {
   uniqueCode: string
   name: string
-  categoryPath: string
+  categoryPath: string // "airtime" | "data" | "electricity" | "cable"
   requiresValidate: boolean
   fixedAmount: boolean
   amount: number | null
@@ -76,6 +75,7 @@ export interface BillCheckoutResponse {
   reference: string
   amount: number
 }
+
 
 export interface Beneficiary {
   id: string

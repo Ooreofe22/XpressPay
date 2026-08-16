@@ -8,19 +8,18 @@ async function sha256(value: string): Promise<string> {
     .join('')
 }
 
-/** True if this identity has never set a local PIN on this device before. */
-export function isFirstTimePinForIdentity(identity: string): boolean {
+/** True if this phone has never set a local PIN on this device before. */
+export function isFirstTimePinForPhone(phone: string): boolean {
   if (typeof window === 'undefined') return true
-  return localStorage.getItem(PIN_STORAGE_PREFIX + identity) === null
+  return localStorage.getItem(PIN_STORAGE_PREFIX + phone) === null
 }
 
 /**
- * First call for an identity on this device sets the PIN.
- * Every call after that validates against the stored hash.
- * Throws on mismatch.
+ * First call for a phone on this device sets the PIN. Every call after that
+ * validates against the stored hash. Throws on mismatch.
  */
-export async function setOrValidateLocalPin(identity: string, pin: string): Promise<void> {
-  const key = PIN_STORAGE_PREFIX + identity
+export async function setOrValidateLocalPin(phone: string, pin: string): Promise<void> {
+  const key = PIN_STORAGE_PREFIX + phone
   const hash = await sha256(pin)
   const existing = localStorage.getItem(key)
 

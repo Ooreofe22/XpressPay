@@ -1,4 +1,4 @@
-const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/,'')
+const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '')
 
 async function authFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -21,29 +21,30 @@ export interface TokenResponse {
   accessToken: string
   refreshToken: string
   userId: string
-  email: string
+  phone: string
 }
 
-export function requestSignupOtp(email: string): Promise<{ message: string }> {
-  return authFetch('/auth/signup/request-otp', { method: 'POST', body: JSON.stringify({ email }) })
+export function submitBvn(bvn: string): Promise<{ valid: boolean }> {
+  return authFetch('/auth/signup/bvn', { method: 'POST', body: JSON.stringify({ bvn }) })
 }
 
-export function verifySignupOtp(email: string, otp: string): Promise<TokenResponse> {
+export function requestSignupOtp(phone: string): Promise<{ message: string }> {
+  return authFetch('/auth/signup/request-otp', { method: 'POST', body: JSON.stringify({ phone }) })
+}
+
+export function verifySignupOtp(phone: string, bvn: string, otp: string): Promise<TokenResponse> {
   return authFetch('/auth/signup/verify-otp', {
     method: 'POST',
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ phone, bvn, otp }),
   })
 }
 
-export function requestLoginOtp(email: string): Promise<{ message: string }> {
-  return authFetch('/auth/login/request-otp', { method: 'POST', body: JSON.stringify({ email }) })
+export function requestLoginOtp(phone: string): Promise<{ message: string }> {
+  return authFetch('/auth/login/request-otp', { method: 'POST', body: JSON.stringify({ phone }) })
 }
 
-export function verifyLoginOtp(email: string, otp: string): Promise<TokenResponse> {
-  return authFetch('/auth/login/verify-otp', {
-    method: 'POST',
-    body: JSON.stringify({ email, otp }),
-  })
+export function verifyLoginOtp(phone: string, otp: string): Promise<TokenResponse> {
+  return authFetch('/auth/login/verify-otp', { method: 'POST', body: JSON.stringify({ phone, otp }) })
 }
 
 export function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
@@ -55,7 +56,7 @@ export function fetchWalletBalance(accessToken: string): Promise<{ balance: numb
 }
 
 export function fetchWalletAccounts(
-  accessToken: string
+    accessToken: string
 ): Promise<{ bankName: string; accountNumber: string; accountName: string }[]> {
   return authFetch('/wallet/accounts', { headers: { Authorization: `Bearer ${accessToken}` } })
 }

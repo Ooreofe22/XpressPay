@@ -1,25 +1,22 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { Loader2 } from 'lucide-react'
 
 // Shared final step for BOTH signup and login — reached from SignUpOTP after a
 // real account is created, and from LoginOTPScreen after a real login. The
-// backend has no PIN concept at all (email+OTP only); this PIN is a local
+// backend has no PIN concept at all (phone+OTP only); this PIN is a local
 // device-level quick-unlock gate on top of the session already issued by the
-// OTP step, stored hashed via lib/localPin.ts and keyed by email. First entry
-// for an email on this device SETS the PIN; every entry after must match it.
+// OTP step, stored hashed via lib/localPin.ts. First entry for a phone on this
+// device SETS the PIN; every entry after that must match it.
 export function WelcomeBackScreen() {
-  const { completeLogin, setAuthScreen, pendingEmail, isSettingNewPin } = useApp()
+  const { completeLogin, setAuthScreen, pendingPhone, isSettingNewPin } = useApp()
   const [pin, setPin] = useState(['', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [shakeKey, setShakeKey] = useState(0)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const reduceMotion = useReducedMotion()
 
   const handleChange = (index: number, value: string) => {
     const digit = value.replace(/\D/g, '').slice(-1)
@@ -28,7 +25,9 @@ export function WelcomeBackScreen() {
     setPin(newPin)
     setError('')
 
-    if (digit && index < 3) inputRefs.current[index + 1]?.focus()
+    if (digit && index < 3) {
+      inputRefs.current[index + 1]?.focus()
+    }
 
     const full = newPin.join('')
     if (full.length === 4 && newPin.every((d) => d !== '')) {
@@ -49,7 +48,6 @@ export function WelcomeBackScreen() {
       await completeLogin(pinCode)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid PIN. Try again.')
-      setShakeKey((k) => k + 1)
       setPin(['', '', '', ''])
       inputRefs.current[0]?.focus()
     } finally {
@@ -57,28 +55,23 @@ export function WelcomeBackScreen() {
     }
   }
 
-  const initial = pendingEmail ? pendingEmail.charAt(0).toUpperCase() : '•'
-  const maskedEmail = pendingEmail ?? ''
+  const maskedPhone = pendingPhone ? `****${pendingPhone.slice(-4)}` : ''
 
   return (
     <AuthLayout onBack={() => setAuthScreen('splash')}>
       <div className="flex flex-col items-center gap-8">
+        {/* Avatar + welcome */}
         <div className="flex flex-col items-center gap-4">
-          <motion.div
-            initial={{ scale: reduceMotion ? 1 : 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', damping: 18, stiffness: 260 }}
-            className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2"
-          >
-            {initial}
-          </motion.div>
+          <div className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2">
+            {pendingPhone ? pendingPhone.slice(-2) : '••'}
+          </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
               {isSettingNewPin ? 'Create a PIN' : 'Welcome back'}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 break-all">
+            <p className="text-sm text-muted-foreground mt-1">
               {isSettingNewPin
-                ? `Set a 4-digit PIN to secure ${maskedEmail}`
+                ? `Set a 4-digit PIN to secure ${maskedPhone}`
                 : 'Enter your PIN to continue'}
             </p>
             <button
@@ -90,18 +83,12 @@ export function WelcomeBackScreen() {
           </div>
         </div>
 
-        <motion.div
-          key={shakeKey}
-          animate={
-            shakeKey > 0 && !reduceMotion ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : { x: 0 }
-          }
-          transition={{ duration: 0.45, ease: 'easeInOut' }}
-          className="flex gap-3 justify-center"
-        >
+        {/* PIN Input Boxes — matches the OTP screens' pattern instead of a numpad */}
+        <div className="flex gap-3 justify-center">
           {pin.map((digit, index) => (
-            <motion.input
+            <input
               key={index}
-              ref={(el: HTMLInputElement | null) => {
+              ref={(el) => {
                 inputRefs.current[index] = el
               }}
               type="password"
@@ -112,14 +99,12 @@ export function WelcomeBackScreen() {
               onKeyDown={(e) => handleKeyDown(index, e)}
               disabled={loading}
               aria-label={`PIN digit ${index + 1}`}
-              animate={digit && !reduceMotion ? { scale: [0.9, 1.06, 1] } : { scale: 1 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
+              className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
                 digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
               }`}
             />
           ))}
-        </motion.div>
+        </div>
 
         {loading && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

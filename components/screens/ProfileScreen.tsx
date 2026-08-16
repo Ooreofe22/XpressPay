@@ -21,7 +21,6 @@ import {
   Landmark,
   Rocket,
   LogOut,
-  Mail,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
@@ -31,16 +30,14 @@ interface KYCField {
   status: 'verified' | 'pending'
 }
 
-// Email is the account identity now, so it's verified by definition; BVN is
-// no longer collected at signup and shows as pending until the user adds it.
 const kycFields: KYCField[] = [
-  { id: 'email', label: 'Email Address', status: 'verified' },
+  { id: 'bvn', label: 'BVN', status: 'verified' },
   { id: 'name', label: 'Full Name', status: 'verified' },
-  { id: 'bvn', label: 'BVN', status: 'pending' },
   { id: 'nin', label: 'NIN', status: 'pending' },
   { id: 'address', label: 'Address', status: 'pending' },
   { id: 'phone', label: 'Phone Number', status: 'pending' },
   { id: 'photo', label: 'Profile Photo', status: 'pending' },
+  { id: 'email', label: 'Email Address', status: 'pending' },
 ]
 
 // ─── Shared sub-screen shell ────────────────────────────────────────────────
@@ -239,7 +236,7 @@ export function ProfileScreen() {
       <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] items-start">
         {/* ── Identity rail ─────────────────────────────────────── */}
         <aside className="space-y-4">
-          {/* Profile card — identity is email now */}
+          {/* Profile card */}
           <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3 min-w-0">
@@ -248,10 +245,7 @@ export function ProfileScreen() {
                 </span>
                 <div className="min-w-0">
                   <p className="text-base font-bold text-foreground truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate inline-flex items-center gap-1">
-                    <Mail size={11} className="flex-shrink-0" />
-                    {user.email}
-                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{user.phone}</p>
                 </div>
               </div>
               <button
