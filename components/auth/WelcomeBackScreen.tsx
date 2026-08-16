@@ -56,75 +56,76 @@ export function WelcomeBackScreen() {
   }
 
   const maskedEmail = pendingEmail ?? ''
+  const initials = (pendingEmail ?? '?').split('@')[0].slice(0, 2).toUpperCase()
 
   return (
-    <AuthLayout onBack={() => setAuthScreen('splash')}>
-      <div className="flex flex-col items-center gap-8">
-        {/* Avatar + welcome */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2">
-            {initials}
+      <AuthLayout onBack={() => setAuthScreen('splash')}>
+        <div className="flex flex-col items-center gap-8">
+          {/* Avatar + welcome */}
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2">
+              {initials}
+            </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                {isSettingNewPin ? 'Create a PIN' : 'Welcome back'}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isSettingNewPin
+                    ? `Set a 4-digit PIN to secure ${maskedEmail}`
+                    : 'Enter your PIN to continue'}
+              </p>
+              <button
+                  onClick={() => setAuthScreen('splash')}
+                  className="text-xs text-primary font-medium hover:underline mt-2 transition-colors"
+              >
+                Not your account? Log out
+              </button>
+            </div>
           </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              {isSettingNewPin ? 'Create a PIN' : 'Welcome back'}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isSettingNewPin
-                ? `Set a 4-digit PIN to secure ${maskedEmail}`
-                : 'Enter your PIN to continue'}
-            </p>
-            <button
-              onClick={() => setAuthScreen('splash')}
-              className="text-xs text-primary font-medium hover:underline mt-2 transition-colors"
-            >
-              Not your account? Log out
-            </button>
+
+          {/* PIN Input Boxes — matches the OTP screens' pattern instead of a numpad */}
+          <div className="flex gap-3 justify-center">
+            {pin.map((digit, index) => (
+                <input
+                    key={index}
+                    ref={(el) => {
+                      inputRefs.current[index] = el
+                    }}
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    disabled={loading}
+                    aria-label={`PIN digit ${index + 1}`}
+                    className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
+                        digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
+                    }`}
+                />
+            ))}
           </div>
+
+          {loading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 size={16} className="animate-spin" />
+                <span>Signing you in…</span>
+              </div>
+          )}
+
+          {error && (
+              <div className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg">
+                {error}
+              </div>
+          )}
+
+          {isSettingNewPin && (
+              <p className="text-xs text-muted-foreground text-center max-w-xs -mt-2">
+                You&apos;ll use this PIN to unlock PayXpress on this device next time
+              </p>
+          )}
         </div>
-
-        {/* PIN Input Boxes — matches the OTP screens' pattern instead of a numpad */}
-        <div className="flex gap-3 justify-center">
-          {pin.map((digit, index) => (
-            <input
-              key={index}
-              ref={(el) => {
-                inputRefs.current[index] = el
-              }}
-              type="password"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              disabled={loading}
-              aria-label={`PIN digit ${index + 1}`}
-              className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
-                digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
-              }`}
-            />
-          ))}
-        </div>
-
-        {loading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 size={16} className="animate-spin" />
-            <span>Signing you in…</span>
-          </div>
-        )}
-
-        {error && (
-          <div className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {isSettingNewPin && (
-          <p className="text-xs text-muted-foreground text-center max-w-xs -mt-2">
-            You&apos;ll use this PIN to unlock PayXpress on this device next time
-          </p>
-        )}
-      </div>
-    </AuthLayout>
+      </AuthLayout>
   )
 }
