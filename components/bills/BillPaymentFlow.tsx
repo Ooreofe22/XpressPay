@@ -243,12 +243,17 @@ export function BillPaymentFlow({
                     <input
                         value={isAirtimeOrData ? phoneNumber : accountNumber}
                         onChange={(e) => {
-                          const v = e.target.value.replace(/\D/g, '')
+                          const v = e.target.value.replace(/\D/g, '').slice(0, 11)
                           isAirtimeOrData ? setPhoneNumber(v) : setAccountNumber(v)
                         }}
+                        maxLength={11}
+                        inputMode="numeric"
                         placeholder={`Enter ${identifierLabel.toLowerCase()}`}
                         className="w-full h-12 px-4 bg-card border border-card-border rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
                     />
+                    <p className="text-xs text-muted-foreground text-right">
+                      {(isAirtimeOrData ? phoneNumber : accountNumber).length}/11 digits
+                    </p>
                   </div>
 
                   {isCable && (
