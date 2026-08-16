@@ -234,55 +234,64 @@ export function ProfileScreen() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] items-start">
-        {/* ── Identity rail ─────────────────────────────────────── */}
+        {/* ── Identity rail — glassmorphic gradient, ethereal moment ─── */}
         <aside className="space-y-4">
-          {/* Profile card */}
-          <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-            <div className="flex items-center justify-between mb-4">
+          {/* Merged identity + balance card */}
+          <div
+            className="relative rounded-[1.75rem] p-6 overflow-hidden elevation-1"
+            style={{ background: 'linear-gradient(135deg, var(--primary-deep) 0%, var(--primary) 100%)' }}
+          >
+            <div
+              aria-hidden
+              className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-25 blur-2xl"
+              style={{ background: 'var(--accent)' }}
+            />
+
+            <div className="relative flex items-center justify-between mb-5">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="w-14 h-14 rounded-full balance-gradient flex items-center justify-center flex-shrink-0">
+                <span className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-lg">{initials}</span>
                 </span>
                 <div className="min-w-0">
-                  <p className="text-base font-bold text-foreground truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user.phone}</p>
+                  <p className="text-base font-bold text-white truncate">{user.name}</p>
+                  <p className="text-xs text-white/60 truncate">{user.email}</p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveSubScreen('settings')}
                 aria-label="Settings"
-                className="w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors flex-shrink-0"
+                className="w-9 h-9 flex items-center justify-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors flex-shrink-0"
               >
                 <Settings size={18} />
               </button>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-xs bg-accent-tint text-accent px-2.5 py-1 rounded-full font-semibold">
+
+            <span className="relative inline-flex items-center gap-1.5 text-xs bg-white/20 backdrop-blur-sm border border-white/20 text-white px-2.5 py-1 rounded-full font-semibold">
               <Medal size={13} strokeWidth={2.25} />
               Tier 1
             </span>
-          </div>
 
-          {/* Balance card */}
-          <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-muted-foreground">Total Balance</p>
-              <button
-                onClick={() => setShowBalance(!showBalance)}
-                aria-label={showBalance ? 'Hide balance' : 'Show balance'}
-                className="p-1 rounded-full text-muted-foreground hover:bg-secondary transition-colors"
-              >
-                {showBalance ? <Eye size={16} /> : <EyeOff size={16} />}
-              </button>
-            </div>
-            <p className="text-3xl font-bold text-foreground tracking-tight mb-4">
-              {showBalance ? formatCurrency(user.accountBalance) : '₦ ••••••'}
-            </p>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-foreground">Account setup</p>
-              <p className="text-xs font-semibold text-accent">20%</p>
-            </div>
-            <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full w-1/5 bg-accent rounded-full" />
+            <div className="relative mt-6 pt-5 border-t border-white/15">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-white/60">Total Balance</p>
+                <button
+                  onClick={() => setShowBalance(!showBalance)}
+                  aria-label={showBalance ? 'Hide balance' : 'Show balance'}
+                  className="p-1 rounded-full text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  {showBalance ? <Eye size={16} /> : <EyeOff size={16} />}
+                </button>
+              </div>
+              <p className="text-3xl font-bold text-white tracking-tight mb-4">
+                {showBalance ? formatCurrency(user.accountBalance) : '₦ ••••••'}
+              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-white/80">Account setup</p>
+                <p className="text-xs font-semibold" style={{ color: '#ffd7b0' }}>20%</p>
+              </div>
+              <div className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden">
+                <div className="h-full w-1/5 bg-accent rounded-full" />
+              </div>
             </div>
           </div>
 
@@ -319,7 +328,7 @@ export function ProfileScreen() {
                     <button
                       key={item.id}
                       onClick={() => setActiveSubScreen(item.screen)}
-                      className="flex items-center gap-3 p-4 bg-card border border-card-border rounded-2xl elevation-1 hover:border-primary/30 transition-colors text-left group"
+                      className="flex items-center gap-3 p-4 bg-card border border-card-border rounded-2xl elevation-1 hover:border-primary/30 hover:-translate-y-0.5 transition-all text-left group"
                     >
                       <span className="w-10 h-10 rounded-xl bg-primary-tint flex items-center justify-center flex-shrink-0 group-hover:bg-primary transition-colors">
                         <Icon

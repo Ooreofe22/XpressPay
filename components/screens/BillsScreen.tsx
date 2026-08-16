@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Search,
   BellRing,
@@ -170,6 +171,7 @@ const BeneficiariesCard: React.FC<{
 
 export function BillsScreen() {
   const { billsActiveTab, setBillsActiveTab, transactions, billerBeneficiaries, refreshTransactionHistory } = useApp()
+  const router = useRouter()
 
   const [billers, setBillers] = useState<Biller[]>([])
   const [loading, setLoading] = useState(true)
@@ -396,9 +398,10 @@ export function BillsScreen() {
                           </p>
                           <div className="bg-card border border-card-border rounded-2xl divide-y divide-card-border elevation-1 overflow-hidden">
                             {txs.map((tx) => (
-                                <div
+                                <button
                                     key={tx.id}
-                                    className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/40 transition-colors"
+                                    onClick={() => router.push(`/receipt/${tx.id}`)}
+                                    className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/40 transition-colors text-left"
                                 >
                                   <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                                     <ReceiptText size={18} className="text-foreground" strokeWidth={2} />
@@ -421,7 +424,8 @@ export function BillsScreen() {
                             {tx.status}
                           </span>
                                   </div>
-                                </div>
+                                  <ChevronRight size={16} className="text-muted-foreground/50 flex-shrink-0" />
+                                </button>
                             ))}
                           </div>
                         </div>

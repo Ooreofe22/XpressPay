@@ -60,13 +60,13 @@ export function SplashScreen() {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center gap-3 mt-10 w-full max-w-md">
             <button
-              onClick={() => setAuthScreen('signup-bvn')}
+              onClick={() => setAuthScreen('signup-email')}
               className="w-full sm:flex-1 h-13 rounded-xl bg-accent text-accent-foreground font-semibold text-base transition-all duration-200 hover:bg-accent/90 active:scale-[0.98] elevation-2"
             >
               Create an account
             </button>
             <button
-              onClick={() => setAuthScreen('login-phone')}
+              onClick={() => setAuthScreen('login-email')}
               className="w-full sm:flex-1 h-13 rounded-xl border border-white/40 bg-white/5 text-white font-semibold text-base transition-all duration-200 hover:bg-white/15 active:scale-[0.98]"
             >
               Log in

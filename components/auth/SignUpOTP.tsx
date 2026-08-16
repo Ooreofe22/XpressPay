@@ -6,7 +6,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout'
 import { Loader2 } from 'lucide-react'
 
 export function SignUpOTP() {
-  const { setAuthScreen, verifySignupOtp, resendSignupOtp, pendingPhone } = useApp()
+  const { setAuthScreen, verifySignupOtp, resendSignupOtp, pendingEmail } = useApp()
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [countdown, setCountdown] = useState(59)
   const [canResend, setCanResend] = useState(false)
@@ -46,10 +46,9 @@ export function SignUpOTP() {
     setError('')
     try {
       await verifySignupOtp(otpString)
-      // Account is created server-side at this point. Hand off to the exact
-      // same screen/component the login flow uses to finish authenticating —
-      // same design, same code, no separate signup-specific finish screen.
-      setAuthScreen('login-welcome')
+      // Email is verified server-side now (PENDING_VERIFICATION user created).
+      // Step 2 of 2 — BVN — activates the account.
+      setAuthScreen('signup-bvn')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid code. Please try again.')
       setOtp(['', '', '', '', '', ''])
@@ -60,7 +59,7 @@ export function SignUpOTP() {
   }
 
   const handleResend = async () => {
-    if (!pendingPhone) return
+    if (!pendingEmail) return
     setCountdown(59)
     setCanResend(false)
     setOtp(['', '', '', '', '', ''])
@@ -72,17 +71,19 @@ export function SignUpOTP() {
     }
   }
 
-  const maskedPhone = pendingPhone ? `****${pendingPhone.slice(-4)}` : '****'
+  const maskedEmail = pendingEmail
+    ? pendingEmail.replace(/^(.{2}).*(@.*)$/, (_m, first, domain) => `${first}••••${domain}`)
+    : '••••'
 
   return (
-    <AuthLayout onBack={() => setAuthScreen('signup-bvn')} eyebrow="Create account · Step 2 of 2">
+    <AuthLayout onBack={() => setAuthScreen('signup-email')} eyebrow="Create account · Step 1 of 2">
       <div className="space-y-10">
         {/* Heading */}
         <div className="space-y-3">
           <h1 className="text-3xl font-bold text-foreground tracking-tight">Enter OTP</h1>
           <p className="text-muted-foreground text-sm leading-relaxed text-pretty">
-            We sent a 6-digit code to the number ending in{' '}
-            <span className="font-semibold text-foreground">{maskedPhone}</span>
+            We sent a 6-digit code to{' '}
+            <span className="font-semibold text-foreground">{maskedEmail}</span>
           </p>
         </div>
 

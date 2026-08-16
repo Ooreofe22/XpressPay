@@ -6,7 +6,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout'
 import { Loader2 } from 'lucide-react'
 
 export function LoginOTPScreen() {
-  const { setAuthScreen, verifyLoginOtp, requestLoginOtp, pendingPhone } = useApp()
+  const { setAuthScreen, verifyLoginOtp, requestLoginOtp, pendingEmail } = useApp()
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [timer, setTimer] = useState(41)
   const [canResend, setCanResend] = useState(false)
@@ -59,29 +59,31 @@ export function LoginOTPScreen() {
   }
 
   const handleResend = async () => {
-    if (!pendingPhone) return
+    if (!pendingEmail) return
     setTimer(41)
     setCanResend(false)
     try {
-      await requestLoginOtp(pendingPhone)
+      await requestLoginOtp(pendingEmail)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not resend code')
     }
   }
 
-  const maskedPhone = pendingPhone ? `****${pendingPhone.slice(-4)}` : '****'
+  const maskedEmail = pendingEmail
+    ? pendingEmail.replace(/^(.{2}).*(@.*)$/, (_m, first, domain) => `${first}••••${domain}`)
+    : '••••'
 
   return (
-    <AuthLayout onBack={() => setAuthScreen('login-phone')} eyebrow="Log in">
+    <AuthLayout onBack={() => setAuthScreen('login-email')} eyebrow="Log in">
       <div className="space-y-10">
         {/* Heading */}
         <div className="space-y-3">
           <h1 className="text-3xl font-bold text-foreground tracking-tight text-balance">
-            Confirm phone number
+            Confirm email address
           </h1>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Please enter the code sent to the number ending in{' '}
-            <span className="font-semibold text-foreground">{maskedPhone}</span>
+            Please enter the code sent to{' '}
+            <span className="font-semibold text-foreground">{maskedEmail}</span>
           </p>
         </div>
 

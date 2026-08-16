@@ -2,7 +2,7 @@ export interface User {
   id: string
   name: string
   email: string
-  phone: string
+  phone?: string
   accountNumber: string
   accountBalance: number
   avatar: string
@@ -21,6 +21,11 @@ export interface Transaction {
   timestamp: Date
   status: 'pending' | 'completed' | 'failed'
   reference: string
+  billerName?: string
+  billerCategoryPath?: string
+  paymentMethod?: 'BALANCE' | 'GATEWAY'
+  xpressReferenceId?: string
+  billerResponseMessage?: string
 }
 
 export interface BankContact {

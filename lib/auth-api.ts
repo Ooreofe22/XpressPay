@@ -21,30 +21,39 @@ export interface TokenResponse {
   accessToken: string
   refreshToken: string
   userId: string
-  phone: string
+  email: string
+  balance: number
 }
 
-export function submitBvn(bvn: string): Promise<{ valid: boolean }> {
-  return authFetch('/auth/signup/bvn', { method: 'POST', body: JSON.stringify({ bvn }) })
+export interface EmailVerifiedResponse {
+  message: string
+  email: string
 }
 
-export function requestSignupOtp(phone: string): Promise<{ message: string }> {
-  return authFetch('/auth/signup/request-otp', { method: 'POST', body: JSON.stringify({ phone }) })
+// ── Signup — step 1 of 2: email + OTP ──────────────────────────────────
+export function requestSignupOtp(email: string): Promise<{ message: string }> {
+  return authFetch('/auth/signup/request-otp', { method: 'POST', body: JSON.stringify({ email }) })
 }
 
-export function verifySignupOtp(phone: string, bvn: string, otp: string): Promise<TokenResponse> {
+export function verifySignupOtp(email: string, otp: string): Promise<EmailVerifiedResponse> {
   return authFetch('/auth/signup/verify-otp', {
     method: 'POST',
-    body: JSON.stringify({ phone, bvn, otp }),
+    body: JSON.stringify({ email, otp }),
   })
 }
 
-export function requestLoginOtp(phone: string): Promise<{ message: string }> {
-  return authFetch('/auth/login/request-otp', { method: 'POST', body: JSON.stringify({ phone }) })
+// ── Signup — step 2 of 2: BVN (activates account, seeds wallet, issues tokens) ──
+export function submitBvn(email: string, bvn: string): Promise<TokenResponse> {
+  return authFetch('/auth/signup/bvn', { method: 'POST', body: JSON.stringify({ email, bvn }) })
 }
 
-export function verifyLoginOtp(phone: string, otp: string): Promise<TokenResponse> {
-  return authFetch('/auth/login/verify-otp', { method: 'POST', body: JSON.stringify({ phone, otp }) })
+// ── Login — email + OTP ─────────────────────────────────────────────────
+export function requestLoginOtp(email: string): Promise<{ message: string }> {
+  return authFetch('/auth/login/request-otp', { method: 'POST', body: JSON.stringify({ email }) })
+}
+
+export function verifyLoginOtp(email: string, otp: string): Promise<TokenResponse> {
+  return authFetch('/auth/login/verify-otp', { method: 'POST', body: JSON.stringify({ email, otp }) })
 }
 
 export function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
@@ -59,4 +68,32 @@ export function fetchWalletAccounts(
     accessToken: string
 ): Promise<{ bankName: string; accountNumber: string; accountName: string }[]> {
   return authFetch('/wallet/accounts', { headers: { Authorization: `Bearer ${accessToken}` } })
+}
+
+// ── Pay with Balance ─────────────────────────────────────────────────────
+export interface WalletDebitRequest {
+  uniqueCode: string
+  categoryPath: string
+  amount: number
+  details: Record<string, unknown>
+}
+
+export interface WalletDebitResponse {
+  transactionId: string
+  status: string
+  xpressReferenceId: string
+  billerResponseMessage: string
+  amount: number
+  newBalance: number
+}
+
+export function payBillFromWallet(
+    accessToken: string,
+    request: WalletDebitRequest
+): Promise<WalletDebitResponse> {
+  return authFetch('/wallet/debits/bill-payment', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(request),
+  })
 }

@@ -7,12 +7,12 @@ import { Loader2 } from 'lucide-react'
 
 // Shared final step for BOTH signup and login — reached from SignUpOTP after a
 // real account is created, and from LoginOTPScreen after a real login. The
-// backend has no PIN concept at all (phone+OTP only); this PIN is a local
+// backend has no PIN concept at all (email+OTP only); this PIN is a local
 // device-level quick-unlock gate on top of the session already issued by the
-// OTP step, stored hashed via lib/localPin.ts. First entry for a phone on this
+// OTP step, stored hashed via lib/localPin.ts. First entry for an email on this
 // device SETS the PIN; every entry after that must match it.
 export function WelcomeBackScreen() {
-  const { completeLogin, setAuthScreen, pendingPhone, isSettingNewPin } = useApp()
+  const { completeLogin, setAuthScreen, pendingEmail, isSettingNewPin } = useApp()
   const [pin, setPin] = useState(['', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -55,7 +55,7 @@ export function WelcomeBackScreen() {
     }
   }
 
-  const maskedPhone = pendingPhone ? `****${pendingPhone.slice(-4)}` : ''
+  const maskedEmail = pendingEmail ?? ''
 
   return (
     <AuthLayout onBack={() => setAuthScreen('splash')}>
@@ -63,7 +63,7 @@ export function WelcomeBackScreen() {
         {/* Avatar + welcome */}
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 rounded-full balance-gradient flex items-center justify-center text-white text-xl font-bold elevation-2">
-            {pendingPhone ? pendingPhone.slice(-2) : '••'}
+            {initials}
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
@@ -71,7 +71,7 @@ export function WelcomeBackScreen() {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {isSettingNewPin
-                ? `Set a 4-digit PIN to secure ${maskedPhone}`
+                ? `Set a 4-digit PIN to secure ${maskedEmail}`
                 : 'Enter your PIN to continue'}
             </p>
             <button

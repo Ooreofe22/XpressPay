@@ -100,6 +100,12 @@ export async function fetchBillPaymentHistory(): Promise<Transaction[]> {
   return raw.map(toTransaction)
 }
 
+/** GET /billers/payments/{id} — single transaction, used by the receipt page. */
+export async function fetchTransaction(id: string): Promise<Transaction> {
+  const raw = await apiFetch<Transaction>(`/billers/payments/${id}`)
+  return toTransaction(raw)
+}
+
 /** GET /billers/beneficiaries — saved recipients for the logged-in user. */
 export function fetchBillBeneficiaries(): Promise<BillBeneficiary[]> {
   return apiFetch<BillBeneficiary[]>('/billers/beneficiaries')

@@ -3,42 +3,43 @@
 import React, { useState } from 'react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
-import { ShieldCheck, ChevronDown, Loader2 } from 'lucide-react'
+import { ShieldCheck, Loader2 } from 'lucide-react'
 
 export function SignUpBVN() {
-  const { setAuthScreen, requestSignupOtp } = useApp()
+  const { setAuthScreen, submitBvn } = useApp()
   const [bvn, setBvn] = useState('')
-  const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const isValidPhone = phone.length === 10
-  const canContinue = bvn.length === 11 && isValidPhone
+  const canContinue = bvn.length === 11
 
   const handleNext = async () => {
     if (!canContinue) return
     setLoading(true)
     setError('')
     try {
-      await requestSignupOtp(bvn, phone)
-      setAuthScreen('signup-otp')
+      await submitBvn(bvn)
+      // Account is now active and the wallet is funded server-side. Hand off
+      // to the exact same screen/component the login flow uses to finish —
+      // same design, same code, no separate signup-specific finish screen.
+      setAuthScreen('login-welcome')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send code. Please try again.')
+      setError(err instanceof Error ? err.message : 'Could not verify BVN. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <AuthLayout onBack={() => setAuthScreen('splash')} eyebrow="Create account · Step 1 of 2">
+    <AuthLayout onBack={() => setAuthScreen('signup-otp')} eyebrow="Create account · Step 2 of 2">
       <div className="space-y-8">
         {/* Heading */}
         <div className="space-y-3">
           <h1 className="text-3xl font-bold text-foreground tracking-tight text-balance">
-            Sign up with your BVN
+            Confirm your BVN
           </h1>
           <p className="text-muted-foreground text-sm leading-relaxed text-pretty">
-            We&apos;ll verify your BVN and send a code to confirm it&apos;s you.
+            One last step — we format-check your BVN to finish setting up your account.
           </p>
         </div>
 
@@ -58,34 +59,6 @@ export function SignUpBVN() {
             className="w-full h-13 px-4 bg-background border border-card-border rounded-xl text-center text-lg font-semibold tracking-[0.3em] text-foreground placeholder:text-muted-foreground/60 placeholder:tracking-normal placeholder:font-normal placeholder:text-base focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
           />
           <p className="text-xs text-muted-foreground text-center">{bvn.length}/11 digits</p>
-        </div>
-
-        {/* Phone Input */}
-        <div className="space-y-2">
-          <label htmlFor="phone" className="text-sm font-medium text-foreground block">
-            Phone number
-          </label>
-          <div className="flex gap-2 items-stretch">
-            <button className="flex items-center gap-1.5 px-3 h-13 bg-background border border-card-border rounded-xl hover:border-primary/40 transition-colors">
-              <span className="text-base">🇳🇬</span>
-              <span className="text-sm font-semibold text-foreground">+234</span>
-              <ChevronDown size={14} className="text-muted-foreground" />
-            </button>
-            <input
-              id="phone"
-              type="tel"
-              inputMode="numeric"
-              placeholder="801 234 5678"
-              value={phone}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '')
-                if (digits.length <= 10) setPhone(digits)
-              }}
-              maxLength={10}
-              className="flex-1 min-w-0 h-13 px-4 bg-background border border-card-border rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">We&apos;ll send your verification code here</p>
         </div>
 
         {/* Helper card */}
@@ -111,18 +84,8 @@ export function SignUpBVN() {
           className="w-full h-13 rounded-xl bg-primary text-primary-foreground font-semibold text-base transition-all duration-200 hover:bg-primary-dark active:scale-[0.98] disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed elevation-1 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 size={18} className="animate-spin" />}
-          {loading ? 'Sending code…' : 'Continue'}
+          {loading ? 'Verifying…' : 'Continue'}
         </button>
-
-        <p className="text-sm text-muted-foreground text-center">
-          Already have an account?{' '}
-          <button
-            onClick={() => setAuthScreen('login-phone')}
-            className="text-primary font-semibold hover:underline"
-          >
-            Log in
-          </button>
-        </p>
       </div>
     </AuthLayout>
   )
