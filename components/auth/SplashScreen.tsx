@@ -40,7 +40,7 @@ export function SplashScreen() {
             Pay Anywhere. Anytime.
           </h1>
           <p className="text-white/70 text-base sm:text-lg leading-relaxed max-w-xl mx-auto mt-5 text-pretty">
-            Send money, pay bills, and manage your finances — fast, secure, and built for the way
+            Send money, pay bills, and manage your finances fast, secure, and built for the way
             Nigeria moves money.
           </p>
 
