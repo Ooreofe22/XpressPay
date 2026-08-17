@@ -70,7 +70,7 @@ export function BillCallbackClient({ reference }: BillCallbackClientProps) {
                 </div>
                 <p className="text-base font-bold text-foreground mb-1">Confirming your payment</p>
                 <p className="text-sm text-muted-foreground max-w-[240px]">
-                  We're verifying with Paystack and processing your bill payment
+                  We're verifying with the gateway and processing your bill payment
                 </p>
               </div>
           )}

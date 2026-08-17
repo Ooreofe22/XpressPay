@@ -8,12 +8,12 @@
   the real payment flow. Added a live search box (was decorative before) and loading/
   error states.
 - **`components/bills/BillPaymentFlow.tsx`** — new. The actual multi-step flow: details →
-  (validate, for electricity/cable only) → confirm → redirect to Paystack. Styled to
+  (validate, for electricity/cable only) → confirm → redirect to gateway. Styled to
   match `SendMoneyScreen.tsx`'s existing conventions exactly (same semantic Tailwind
   classes: `bg-primary`, `bg-card`, `border-card-border`, `elevation-1`, etc.) — not a
   reskin, it uses the real design tokens already in this project's `globals.css`.
 - **`app/bills/callback/page.tsx`** — new. This didn't exist before at all. It's the
-  page Paystack redirects back to after checkout — reads `?reference=` from the URL,
+  page gateway redirects back to after checkout — reads `?reference=` from the URL,
   calls `GET /billers/payments/verify/{reference}` (which actively triggers server-side
   confirmation), and shows a receipt-style result. Polls briefly if still `pending`.
 - **`lib/api.ts`** — new. Typed fetch wrapper for all the biller/payment endpoints.

@@ -429,7 +429,7 @@ export function BillPaymentFlow({
                       >
                         <CreditCard size={18} className={method === 'gateway' ? 'text-primary' : 'text-muted-foreground'} />
                         <p className="text-sm font-bold text-foreground mt-2">Card / Gateway</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">via Paystack</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">via Gateway</p>
                         {method === 'gateway' && (
                             <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
                               <Check size={11} className="text-primary-foreground" strokeWidth={3} />
@@ -471,7 +471,7 @@ export function BillPaymentFlow({
                   </button>
                   {method === 'gateway' && (
                       <p className="text-xs text-muted-foreground text-center -mt-2">
-                        You&apos;ll be redirected to Paystack to complete payment
+                        You&apos;ll be redirected to the Payment-gateway to complete payment
                       </p>
                   )}
                 </div>
@@ -559,7 +559,7 @@ export function BillPaymentFlow({
                 <div className="w-16 h-16 rounded-full bg-primary-tint flex items-center justify-center mb-5">
                   <Loader2 size={28} className="text-primary animate-spin" />
                 </div>
-                <p className="text-base font-bold text-foreground mb-1">Redirecting to Paystack…</p>
+                <p className="text-base font-bold text-foreground mb-1">Redirecting to the gateway…</p>
                 <p className="text-sm text-muted-foreground max-w-[240px]">
                   Complete your payment there — you&apos;ll be brought back here automatically
                 </p>
