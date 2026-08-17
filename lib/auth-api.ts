@@ -80,13 +80,23 @@ export interface WalletDebitResponse {
   newBalance: number
 }
 
-export function payBillFromWallet(
+export async function payBillFromWallet(
     accessToken: string,
     request: WalletDebitRequest
 ): Promise<WalletDebitResponse> {
-  return authFetch('/wallet/debits/bill-payment', {
+  const response = await fetch(`${API_BASE_URL}/wallet/debits/bill-payment`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
     body: JSON.stringify(request),
   })
+
+  if (response.ok || response.status === 422) {
+    return response.json()
+  }
+
+  const body = await response.json().catch(() => ({ message: response.statusText }))
+  throw new Error(body.message || `Request failed: ${response.status}`)
 }
