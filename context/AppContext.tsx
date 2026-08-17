@@ -5,7 +5,6 @@ import { User, Transaction, BankContact, Card, BillBeneficiary } from '@/types'
 import {
   requestSignupOtp as apiRequestSignupOtp,
   verifySignupOtp as apiVerifySignupOtp,
-  submitBvn as apiSubmitBvn,
   requestLoginOtp as apiRequestLoginOtp,
   verifyLoginOtp as apiVerifyLoginOtp,
   fetchWalletBalance,
@@ -23,7 +22,6 @@ type AuthScreen =
     | 'login-welcome'
     | 'signup-email'
     | 'signup-otp'
-    | 'signup-bvn'
     | 'dashboard'
 
 type BillsTab = 'bills' | 'transactions'
@@ -41,19 +39,17 @@ interface AppContextType {
   rehydrating: boolean
 
   // email currently mid-flow (set by SignUpEmailScreen/LoginEmailScreen, read
-  // by the OTP + BVN + PIN screens)
+  // by the OTP + PIN screens)
   pendingEmail: string | null
   // true if this device has no local PIN saved for pendingEmail yet — lets
   // WelcomeBackScreen show "Create a PIN" instead of "Enter your PIN"
   isSettingNewPin: boolean
 
-  // -- Signup (2 steps) --
-  // Step 1: email -> OTP
-  requestSignupOtp: (email: string) => Promise<void>
+  // -- Signup — ONE screen collects email + BVN together, then OTP finishes
+  // everything (account creation, wallet seed, tokens) in one call --
+  requestSignupOtp: (email: string, bvn: string) => Promise<void>
   resendSignupOtp: () => Promise<void>
   verifySignupOtp: (otp: string) => Promise<void>
-  // Step 2: BVN — activates the account, seeds the wallet, issues tokens
-  submitBvn: (bvn: string) => Promise<void>
 
   // -- Login --
   requestLoginOtp: (email: string) => Promise<void>
@@ -206,42 +202,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     refreshBillerBeneficiaries()
   }
 
-  // -- Signup, step 1 of 2: email -> OTP --
+  // -- Signup — email + BVN collected together on ONE screen. request-otp
+  // format-checks both and sends the code; the account isn't created until
+  // verify-otp succeeds, so a typo'd email never leaves a half-made account.
 
-  const requestSignupOtp = async (email: string) => {
+  const requestSignupOtp = async (email: string, bvn: string) => {
     const normalizedEmail = normalizeEmail(email)
-    await apiRequestSignupOtp(normalizedEmail)
+    await apiRequestSignupOtp(normalizedEmail, bvn)
     setPendingEmail(normalizedEmail)
-  }
-
-  // Resend uses whatever email is already in state — does NOT re-collect it.
-  const resendSignupOtp = async () => {
-    if (!pendingEmail) {
-      throw new Error('Missing email — please start over')
-    }
-    await apiRequestSignupOtp(pendingEmail)
-  }
-
-  const verifySignupOtp = async (otp: string) => {
-    if (!pendingEmail) {
-      throw new Error('Missing email — please start over')
-    }
-    await apiVerifySignupOtp(pendingEmail, otp)
-    // email is now verified server-side (PENDING_VERIFICATION user created).
-    // SignUpOTP navigates to signup-bvn next — step 2 of 2.
-  }
-
-  // -- Signup, step 2 of 2: BVN — activates the account, seeds the wallet,
-  // and issues tokens. Deliberately does NOT set isAuthenticated yet —
-  // WelcomeBackScreen (the exact same screen/component login uses) finishes
-  // the job via completeLogin(), same as the old flow.
-
-  const submitBvn = async (bvn: string) => {
-    if (!pendingEmail) {
-      throw new Error('Missing email — please start over')
-    }
-    const tokens = await apiSubmitBvn(pendingEmail, bvn)
     setPendingBvn(bvn)
+  }
+
+  // Resend uses whatever email + BVN are already in state — does NOT re-collect them.
+  const resendSignupOtp = async () => {
+    if (!pendingEmail || !pendingBvn) {
+      throw new Error('Missing details — please start over')
+    }
+    await apiRequestSignupOtp(pendingEmail, pendingBvn)
+  }
+
+  // Verify OTP — this is now the ONE step that finishes signup: creates +
+  // activates the account, seeds the wallet bonus, generates virtual
+  // accounts, and issues tokens, all server-side in a single call. Does NOT
+  // set isAuthenticated yet — WelcomeBackScreen (shared with login) finishes
+  // the job via completeLogin() once the local PIN is set/confirmed.
+  const verifySignupOtp = async (otp: string) => {
+    if (!pendingEmail || !pendingBvn) {
+      throw new Error('Missing details — please start over')
+    }
+    const tokens = await apiVerifySignupOtp(pendingEmail, pendingBvn, otp)
     setPendingTokens(tokens)
   }
 
@@ -403,7 +392,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             requestSignupOtp,
             resendSignupOtp,
             verifySignupOtp,
-            submitBvn,
             requestLoginOtp,
             verifyLoginOtp,
             completeLogin,

@@ -25,26 +25,19 @@ export interface TokenResponse {
   balance: number
 }
 
-export interface EmailVerifiedResponse {
-  message: string
-  email: string
+// ── Signup — email + BVN collected together on one screen. request-otp
+// format-checks both and sends the code; verify-otp does everything else
+// (creates + activates the account, seeds the wallet, issues tokens) in
+// a single call once the code is confirmed. No separate BVN step. ──────
+export function requestSignupOtp(email: string, bvn: string): Promise<{ message: string }> {
+  return authFetch('/auth/signup/request-otp', { method: 'POST', body: JSON.stringify({ email, bvn }) })
 }
 
-// ── Signup — step 1 of 2: email + OTP ──────────────────────────────────
-export function requestSignupOtp(email: string): Promise<{ message: string }> {
-  return authFetch('/auth/signup/request-otp', { method: 'POST', body: JSON.stringify({ email }) })
-}
-
-export function verifySignupOtp(email: string, otp: string): Promise<EmailVerifiedResponse> {
+export function verifySignupOtp(email: string, bvn: string, otp: string): Promise<TokenResponse> {
   return authFetch('/auth/signup/verify-otp', {
     method: 'POST',
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ email, bvn, otp }),
   })
-}
-
-// ── Signup — step 2 of 2: BVN (activates account, seeds wallet, issues tokens) ──
-export function submitBvn(email: string, bvn: string): Promise<TokenResponse> {
-  return authFetch('/auth/signup/bvn', { method: 'POST', body: JSON.stringify({ email, bvn }) })
 }
 
 // ── Login — email + OTP ─────────────────────────────────────────────────

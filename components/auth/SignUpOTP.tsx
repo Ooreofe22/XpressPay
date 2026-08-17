@@ -46,9 +46,10 @@ export function SignUpOTP() {
     setError('')
     try {
       await verifySignupOtp(otpString)
-      // Email is verified server-side now (PENDING_VERIFICATION user created).
-      // Step 2 of 2 — BVN — activates the account.
-      setAuthScreen('signup-bvn')
+      // verify-otp just created + activated the account, seeded the wallet,
+      // and issued tokens server-side. Hand off to the shared PIN screen —
+      // same component login uses — to finish (device-local PIN, then dashboard).
+      setAuthScreen('login-welcome')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid code. Please try again.')
       setOtp(['', '', '', '', '', ''])
@@ -76,7 +77,7 @@ export function SignUpOTP() {
     : '••••'
 
   return (
-    <AuthLayout onBack={() => setAuthScreen('signup-email')} eyebrow="Create account · Step 1 of 2">
+    <AuthLayout onBack={() => setAuthScreen('signup-email')} eyebrow="Create account">
       <div className="space-y-10">
         {/* Heading */}
         <div className="space-y-3">

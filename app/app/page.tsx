@@ -8,7 +8,6 @@ import { LoginEmailScreen } from '@/components/auth/LoginEmailScreen'
 import { LoginOTPScreen } from '@/components/auth/LoginOTPScreen'
 import { WelcomeBackScreen } from '@/components/auth/WelcomeBackScreen'
 import { SignUpEmailScreen } from '@/components/auth/SignUpEmailScreen'
-import { SignUpBVN } from '@/components/auth/SignUpBVN'
 import { SignUpOTP } from '@/components/auth/SignUpOTP'
 import { AppShell } from '@/components/layout/AppShell'
 import { BottomNavigation } from '@/components/layout/BottomNavigation'
@@ -53,7 +52,6 @@ function AppContent() {
                 {authScreen === 'login-welcome' && <WelcomeBackScreen />}
                 {authScreen === 'signup-email' && <SignUpEmailScreen />}
                 {authScreen === 'signup-otp' && <SignUpOTP />}
-                {authScreen === 'signup-bvn' && <SignUpBVN />}
             </>
         )
     }
