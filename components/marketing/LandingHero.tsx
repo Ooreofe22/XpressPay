@@ -73,12 +73,12 @@ export function LandingHero() {
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:py-24">
           {/* Copy */}
           <div>
-            <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              Licensed by the CBN · Insured by the NDIC
-            </span>
-            </Reveal>
+            {/*<Reveal>*/}
+            {/*<span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground">*/}
+            {/*  <span className="h-1.5 w-1.5 rounded-full bg-primary" />*/}
+            {/*  Licensed by the CBN · Insured by the NDIC*/}
+            {/*</span>*/}
+            {/*</Reveal>*/}
 
             <Reveal delay={100}>
               <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
