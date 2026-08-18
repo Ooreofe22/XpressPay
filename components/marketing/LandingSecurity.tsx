@@ -1,5 +1,6 @@
 import React from 'react'
-import { Landmark, ShieldCheck, Lock, BadgeCheck } from 'lucide-react'
+import { Reveal } from './Reveal'
+import { Lock, Landmark, BadgeCheck, Eye } from 'lucide-react'
 
 const pillars = [
   {
@@ -8,88 +9,52 @@ const pillars = [
     description: 'Operating under Central Bank of Nigeria licensing and oversight.',
   },
   {
-    icon: ShieldCheck,
+    icon: BadgeCheck,
     title: 'NDIC insured',
     description: 'Eligible deposits are insured by the Nigeria Deposit Insurance Corporation.',
   },
   {
     icon: Lock,
-    title: 'Bank-grade encryption',
-    description: 'Your data is protected in transit and at rest with 256-bit encryption.',
+    title: '256-bit encryption',
+    description: 'Your data is protected in transit and at rest, on every request.',
   },
   {
-    icon: BadgeCheck,
-    title: 'Verified KYC',
-    description: 'BVN and government-ID verification keep every account secure and compliant.',
+    icon: Eye,
+    title: 'Verified accounts',
+    description: 'BVN and identity checks on every account before it can move money.',
   },
 ]
 
 export function LandingSecurity() {
   return (
-    <section id="security" className="border-t border-border bg-background">
-      <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 lg:py-28">
-        <div className="grid items-start gap-12 lg:grid-cols-[1fr_1.15fr] lg:gap-16">
-          {/* Left — copy + premium trust panel */}
-          <div className="lg:sticky lg:top-24">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
-              <span className="h-px w-6 bg-primary/40" aria-hidden="true" />
-              Security &amp; trust
-            </span>
-            <h2 className="mt-4 text-balance text-3xl font-bold leading-[1.12] tracking-tight text-foreground sm:text-4xl">
-              Your money is protected at every layer
-            </h2>
-            <p className="mt-4 max-w-md text-pretty text-base leading-relaxed text-muted-foreground">
-              We built PayXpress on the same standards trusted by regulated financial institutions,
-              so you can move money with confidence.
-            </p>
+    <section id="security" className="relative overflow-hidden bg-primary-deep">
+      <div className="relative mx-auto w-full max-w-[1180px] px-5 py-20 sm:px-8 lg:py-28">
+        <Reveal className="max-w-2xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
+            Security
+          </p>
+          <h2 className="mt-4 text-balance text-[2rem] font-bold leading-[1.08] tracking-[-0.015em] text-white sm:text-[2.6rem]">
+            Regulated, insured, and built to stay that way
+          </h2>
+          <p className="mt-4 max-w-lg text-pretty text-[16px] leading-[1.6] text-white/60">
+            PayXpress runs on the same standards required of licensed financial institutions in
+            Nigeria.
+          </p>
+        </Reveal>
 
-            {/* Confident deep-green trust panel */}
-            <div className="balance-gradient mt-8 overflow-hidden rounded-2xl p-6 text-white elevation-2">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-inset ring-white/15">
-                  <Lock size={18} strokeWidth={2.25} className="text-white" />
+        {/* Divided row — thin rules, no card stack */}
+        <div className="mt-16 grid gap-px overflow-hidden bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
+          {pillars.map(({ icon: Icon, title, description }, i) => (
+            <Reveal key={title} delay={i * 0.08}>
+              <div className="h-full bg-primary-deep px-0 pb-2 sm:px-7 sm:pt-1">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.07] ring-1 ring-inset ring-white/12">
+                  <Icon size={18} strokeWidth={2} className="text-white" />
                 </span>
-                <div>
-                  <p className="text-sm font-semibold">Regulated &amp; insured</p>
-                  <p className="text-xs text-white/70">CBN licensed · NDIC deposit insurance</p>
-                </div>
+                <h3 className="mt-5 text-[15.5px] font-bold tracking-tight text-white">{title}</h3>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-white/55">{description}</p>
               </div>
-
-              <div className="mt-6 h-px w-full bg-white/10" />
-
-              <div className="mt-6 flex items-center gap-4">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold tracking-tight">99.99%</span>
-                </div>
-                <p className="text-sm leading-relaxed text-white/80">
-                  uptime with 24/7 fraud monitoring on every transaction.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Right — pillar grid with crisp dividers */}
-          <div className="overflow-hidden rounded-2xl border border-border bg-border">
-            <div className="grid gap-px bg-border sm:grid-cols-2">
-              {pillars.map((pillar) => {
-                const Icon = pillar.icon
-                return (
-                  <div
-                    key={pillar.title}
-                    className="group bg-card p-7 transition-colors duration-200 hover:bg-primary-tint/40"
-                  >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-background transition-colors duration-200 group-hover:border-primary/30">
-                      <Icon size={20} strokeWidth={2} className="text-primary" />
-                    </span>
-                    <h3 className="mt-5 text-base font-bold text-foreground">{pillar.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {pillar.description}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>

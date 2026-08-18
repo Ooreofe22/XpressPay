@@ -1,133 +1,120 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+
+import React from 'react'
 import Link from 'next/link'
-import { ArrowRight, ShieldCheck } from 'lucide-react'
-import { HeroVisual } from '@/components/marketing/HeroVisual'
-
-function useReveal<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null)
-  const [visible, setVisible] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setVisible(true)
-      return
-    }
-    const obs = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setVisible(true)
-            obs.disconnect()
-          }
-        },
-        { threshold: 0.15 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-  return [ref, visible] as const
-}
-
-function Reveal({
-                  children,
-                  delay = 0,
-                  className = '',
-                }: {
-  children: React.ReactNode
-  delay?: number
-  className?: string
-}) {
-  const [ref, visible] = useReveal<HTMLDivElement>()
-  return (
-      <div
-          ref={ref}
-          className={className}
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'translateY(0)' : 'translateY(24px)',
-            transition: `opacity 0.7s cubic-bezier(.16,1,.3,1) ${delay}ms, transform 0.7s cubic-bezier(.16,1,.3,1) ${delay}ms`,
-          }}
-      >
-        {children}
-      </div>
-  )
-}
+import { motion, useReducedMotion } from 'motion/react'
+import { ArrowUpRight, ShieldCheck } from 'lucide-react'
+import { DashboardMockup, TransferMockup } from './ProductMockups'
 
 export function LandingHero() {
-  // @ts-ignore
+  const reduce = useReducedMotion()
+
+  const rise = (delay: number) => ({
+    initial: reduce ? { opacity: 0 } : { opacity: 0, y: 20 },
+    animate: reduce ? { opacity: 1 } : { opacity: 1, y: 0 },
+    transition: {
+      duration: reduce ? 0.25 : 0.7,
+      delay: reduce ? 0 : delay,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  })
+
   return (
-      <section className="relative overflow-hidden">
-        {/* Ambient gradient blooms - brand colors, unchanged tokens */}
-        <div
-            aria-hidden
-            className="pointer-events-none absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full opacity-[0.16] blur-3xl"
-            style={{ background: 'radial-gradient(circle, var(--primary) 0%, transparent 70%)' }}
-        />
-        <div
-            aria-hidden
-            className="pointer-events-none absolute top-40 -left-32 h-[400px] w-[400px] rounded-full opacity-[0.12] blur-3xl"
-            style={{ background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)' }}
-        />
+    <section className="relative overflow-hidden">
+      {/* Single restrained tint anchored top-left — not a full-bleed gradient wash */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-1/4 -top-1/3 h-[560px] w-[720px] rounded-full bg-primary/[0.07] blur-[120px]"
+      />
 
-        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:py-24">
-          {/* Copy */}
-          <div>
-            {/*<Reveal>*/}
-            {/*<span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground">*/}
-            {/*  <span className="h-1.5 w-1.5 rounded-full bg-primary" />*/}
-            {/*  Licensed by the CBN · Insured by the NDIC*/}
-            {/*</span>*/}
-            {/*</Reveal>*/}
+      <div className="relative mx-auto w-full max-w-[1180px] px-5 pb-20 pt-14 sm:px-8 lg:pb-28 lg:pt-20">
+        <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-12">
+          {/* ── Copy ─────────────────────────────────────────────── */}
+          <div className="max-w-xl">
+            <motion.p
+              {...rise(0)}
+              className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary"
+            >
+              Payments built for Nigeria
+            </motion.p>
 
-            <Reveal delay={100}>
-              <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                Money that moves
-                <br />
-                like <span className="text-primary">you</span> do.
-              </h1>
-            </Reveal>
+            <motion.h1
+              {...rise(0.08)}
+              className="mt-5 text-balance text-[2.6rem] font-bold leading-[1.02] tracking-[-0.02em] text-foreground sm:text-[3.4rem] lg:text-[4rem]"
+            >
+              Send, pay and spend
+              <br className="hidden sm:block" />{' '}
+              <span className="text-primary">without the wait.</span>
+            </motion.h1>
 
-            <Reveal delay={200}>
-              <p className="mt-5 max-w-md text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Pay bills, send cash, and manage your wallet in one calm, fast app
-                built for the way Nigerians actually move money.
+            <motion.p
+              {...rise(0.16)}
+              className="mt-6 max-w-md text-pretty text-[16.5px] leading-[1.6] text-muted-foreground"
+            >
+              One account for transfers to any Nigerian bank, every bill you owe, and cards you
+              control down to the last naira.
+            </motion.p>
+
+            <motion.div {...rise(0.24)} className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/app?screen=signup-email"
+                className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-7 text-[14.5px] font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary-dark active:translate-y-px"
+              >
+                Open a free account
+                <ArrowUpRight
+                  size={16}
+                  strokeWidth={2.75}
+                  className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                />
+              </Link>
+              <a
+                href="#product"
+                className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-white px-7 text-[14.5px] font-semibold text-foreground transition-colors duration-200 hover:border-primary/35 hover:bg-secondary"
+              >
+                See the product
+              </a>
+            </motion.div>
+
+            <motion.div
+              {...rise(0.32)}
+              className="mt-10 flex items-center gap-2.5 border-t border-border pt-6"
+            >
+              <ShieldCheck size={15} className="shrink-0 text-primary" strokeWidth={2.25} />
+              <p className="text-[12.5px] text-muted-foreground">
+                Licensed by the CBN · Deposits insured by the NDIC
               </p>
-            </Reveal>
-
-            <Reveal delay={300}>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                    href="/app"
-                    className="inline-flex h-13 items-center justify-center gap-1.5 rounded-2xl bg-primary px-7 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_var(--primary)] transition-all duration-200 hover:bg-primary-dark active:translate-y-px"
-                >
-                  Get started free
-                  <ArrowRight size={17} strokeWidth={2.5} />
-                </Link>
-                <a
-                    href="#features"
-                    className="inline-flex h-13 items-center justify-center rounded-2xl border border-border bg-card/70 backdrop-blur-sm px-7 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-                >
-                  See how it works
-                </a>
-              </div>
-            </Reveal>
-
-            <Reveal delay={400}>
-              <div className="mt-8 flex items-center gap-2 text-xs text-muted-foreground">
-                <ShieldCheck size={15} className="text-primary" />
-                Bank-grade encryption · No hidden fees · Free to open
-              </div>
-            </Reveal>
+            </motion.div>
           </div>
 
-          {/* Visual - dashboard mockup (app.payxpress.ng/dashboard style) */}
-          <Reveal delay={200}>
-            <div className="relative lg:pl-4">
-              <HeroVisual />
-            </div>
-          </Reveal>
+          {/* ── Product visual ───────────────────────────────────── */}
+          <motion.div
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.985 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              duration: reduce ? 0.25 : 0.85,
+              delay: reduce ? 0 : 0.18,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="relative"
+          >
+            <DashboardMockup />
+
+            {/* One offset surface for depth — hidden on small screens to avoid clipping */}
+            <motion.div
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20, x: 12 }}
+              animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, x: 0 }}
+              transition={{
+                duration: reduce ? 0.25 : 0.7,
+                delay: reduce ? 0 : 0.45,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="absolute -bottom-8 -left-10 hidden xl:block"
+            >
+              <TransferMockup />
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
+      </div>
+    </section>
   )
 }
