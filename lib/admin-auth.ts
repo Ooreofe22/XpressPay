@@ -12,7 +12,7 @@
  * anywhere beyond internal/demo use.
  */
 export const ADMIN_EMAIL_ALLOWLIST: string[] = [
-  // add admin emails here, e.g. 'you@xpresspay.ng'
+  'ooreofepopoola@gmail.com'
 ]
 
 const ADMIN_KEY_STORAGE = 'payxpress_admin_key'
