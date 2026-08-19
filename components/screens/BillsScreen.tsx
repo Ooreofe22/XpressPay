@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'motion/react'
 import {
   Search,
   BellRing,
@@ -11,6 +12,11 @@ import {
   ChevronRight,
   ArrowLeft,
   RefreshCw,
+  Smartphone,
+  Wifi,
+  Zap,
+  Tv,
+  BookmarkCheck,
 } from 'lucide-react'
 import type { Biller, BillBeneficiary, Transaction } from '@/types'
 import { fetchAllBillers } from '@/lib/api'
@@ -18,17 +24,20 @@ import { BillPaymentFlow } from '@/components/bills/BillPaymentFlow'
 import { useApp } from '@/context/AppContext'
 import { formatCurrency } from '@/lib/utils'
 
-const CATEGORY_META: Record<string, { title: string }> = {
-  airtime: { title: 'Airtime' },
-  data: { title: 'Data' },
-  electricity: { title: 'Electricity' },
-  cable: { title: 'Cable TV' },
+const CATEGORY_META: Record<
+    string,
+    { title: string; hint: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }> }
+> = {
+  airtime: { title: 'Airtime', hint: 'All networks', icon: Smartphone },
+  data: { title: 'Data', hint: 'Internet bundles', icon: Wifi },
+  electricity: { title: 'Electricity', hint: 'Prepaid & postpaid', icon: Zap },
+  cable: { title: 'Cable TV', hint: 'DStv, GOtv & more', icon: Tv },
 }
 
 const CATEGORY_ORDER = ['airtime', 'data', 'electricity', 'cable'] as const
 const MAX_PER_CATEGORY = 5
 
-// Deterministic color per provider name so the same biller always renders the same circle color
+// Deterministic color per provider name so the same biller always renders the same mark color
 function providerColor(name: string): string {
   const palette = ['#0b5cad', '#c2560c', '#0a8f3c', '#1f2933', '#b5121b', '#e5322d']
   let hash = 0
@@ -45,6 +54,12 @@ function initialsOf(name: string): string {
       .toUpperCase()
 }
 
+function maskIdentifier(value?: string): string {
+  if (!value) return ''
+  const digits = value.replace(/\s/g, '')
+  return digits.length <= 4 ? digits : `•••• ${digits.slice(-4)}`
+}
+
 function formatDateGroup(dateStr: string): string {
   const date = new Date(dateStr)
   const today = new Date()
@@ -56,80 +71,126 @@ function formatDateGroup(dateStr: string): string {
   return date.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'short' })
 }
 
-const BillerCircleItem: React.FC<{ biller: Biller; onSelect: (b: Biller) => void }> = ({ biller, onSelect }) => (
-    <button
-        onClick={() => onSelect(biller)}
-        className="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
-    >
-      <div
-          className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 elevation-1 ring-1 ring-black/5 group-hover:ring-primary/30 transition-shadow"
-          style={{ backgroundColor: providerColor(biller.name) }}
+/** Brand mark for a biller — gradient rounded-square monogram instead of a flat circle. */
+const BillerMark: React.FC<{ name: string; size?: 'sm' | 'md' }> = ({ name, size = 'md' }) => {
+  const c = providerColor(name)
+  return (
+      <span
+          className={`flex flex-shrink-0 items-center justify-center rounded-[10px] font-bold text-white ring-1 ring-inset ring-white/20 ${
+              size === 'md' ? 'h-10 w-10 text-[11px]' : 'h-9 w-9 text-[10px]'
+          }`}
+          style={{
+            backgroundImage: `linear-gradient(140deg, ${c} 0%, ${c} 45%, rgba(0,0,0,0.32) 165%)`,
+            boxShadow: `0 2px 8px -2px ${c}55`,
+          }}
       >
-        {initialsOf(biller.name)}
-      </div>
-      <p className="text-xs font-medium text-foreground text-center leading-tight max-w-16 truncate">
+      {initialsOf(name)}
+    </span>
+  )
+}
+
+/** One biller row — name + mark + reveal-on-hover chevron. */
+const BillerRow: React.FC<{
+  biller: Biller
+  onSelect: (b: Biller) => void
+  secondary?: string
+}> = ({ biller, onSelect, secondary }) => (
+    <motion.button
+        whileTap={{ scale: 0.98 }}
+        onClick={() => onSelect(biller)}
+        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-primary-tint/50"
+    >
+      <BillerMark name={biller.name} />
+      <span className="min-w-0 flex-1">
+      <span className="block truncate text-[13px] font-semibold text-foreground">
         {biller.name}
-      </p>
-    </button>
+      </span>
+        {secondary && (
+            <span className="block truncate text-[11px] text-muted-foreground">{secondary}</span>
+        )}
+    </span>
+      <ChevronRight
+          size={15}
+          className="flex-shrink-0 -translate-x-1 text-transparent transition-all duration-200 group-hover:translate-x-0 group-hover:text-primary"
+      />
+    </motion.button>
 )
 
 const BillerSection: React.FC<{
   categoryPath: string
-  title: string
   billers: Biller[]
   onSelect: (b: Biller) => void
   onSeeMore: (categoryPath: string) => void
-}> = ({ categoryPath, title, billers, onSelect, onSeeMore }) => {
-  if (billers.length === 0) return null
+}> = ({ categoryPath, billers, onSelect, onSeeMore }) => {
+  const meta = CATEGORY_META[categoryPath]
+  if (!meta || billers.length === 0) return null
+  const Icon = meta.icon
   const visible = billers.slice(0, MAX_PER_CATEGORY)
   const hasMore = billers.length > MAX_PER_CATEGORY
 
   return (
-      <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-        <div className="flex items-center justify-between mb-5">
-          <p className="font-bold text-foreground text-sm">{title}</p>
+      <section className="overflow-hidden rounded-2xl border border-card-border bg-card elevation-1">
+        <header className="flex items-center justify-between border-b border-card-border/70 px-4 py-3.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary-tint text-primary">
+            <Icon size={15} strokeWidth={2.25} />
+          </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-foreground">{meta.title}</p>
+              <p className="truncate text-[11px] text-muted-foreground">{meta.hint}</p>
+            </div>
+          </div>
           {hasMore && (
               <button
                   onClick={() => onSeeMore(categoryPath)}
-                  className="text-xs font-semibold text-primary hover:underline"
+                  className="inline-flex flex-shrink-0 items-center gap-0.5 text-xs font-semibold text-primary hover:underline"
               >
-                See more
+                All {billers.length}
+                <ChevronRight size={13} />
               </button>
           )}
-        </div>
-        <div className="grid grid-cols-4 gap-4">
+        </header>
+        <div className="p-1.5">
           {visible.map((biller) => (
-              <BillerCircleItem key={biller.uniqueCode} biller={biller} onSelect={onSelect} />
+              <BillerRow key={biller.uniqueCode} biller={biller} onSelect={onSelect} />
           ))}
         </div>
-      </div>
+      </section>
   )
 }
 
 const CategoryFullList: React.FC<{
-  title: string
+  categoryPath: string
   billers: Biller[]
   onBack: () => void
   onSelect: (b: Biller) => void
-}> = ({ title, billers, onBack, onSelect }) => (
-    <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-      <div className="flex items-center gap-3 mb-5">
-        <button
-            onClick={onBack}
-            aria-label="Back to categories"
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary transition-colors"
-        >
-          <ArrowLeft size={16} />
-        </button>
-        <p className="font-bold text-foreground text-sm">{title} · All billers</p>
-      </div>
-      <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
-        {billers.map((biller) => (
-            <BillerCircleItem key={biller.uniqueCode} biller={biller} onSelect={onSelect} />
-        ))}
-      </div>
-    </div>
-)
+}> = ({ categoryPath, billers, onBack, onSelect }) => {
+  const meta = CATEGORY_META[categoryPath]
+  return (
+      <section className="overflow-hidden rounded-2xl border border-card-border bg-card elevation-1">
+        <header className="flex items-center gap-3 border-b border-card-border/70 px-4 py-3.5">
+          <button
+              onClick={onBack}
+              aria-label="Back to categories"
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-secondary"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <p className="text-sm font-bold text-foreground">
+            {meta?.title ?? categoryPath}
+            <span className="ml-2 font-medium text-muted-foreground">
+            {billers.length} billers
+          </span>
+          </p>
+        </header>
+        <div className="grid gap-1 p-1.5 sm:grid-cols-2">
+          {billers.map((biller) => (
+              <BillerRow key={biller.uniqueCode} biller={biller} onSelect={onSelect} />
+          ))}
+        </div>
+      </section>
+  )
+}
 
 const BeneficiariesCard: React.FC<{
   beneficiaries: BillBeneficiary[]
@@ -137,35 +198,48 @@ const BeneficiariesCard: React.FC<{
 }> = ({ beneficiaries, onSelect }) => {
   if (beneficiaries.length === 0) return null
   return (
-      <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-        <p className="font-bold text-foreground text-sm mb-4">Beneficiaries</p>
-        <div className="space-y-1">
+      <section className="overflow-hidden rounded-2xl border border-card-border bg-card elevation-1">
+        <header className="flex items-center justify-between border-b border-card-border/70 px-4 py-3.5">
+          <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-tint text-accent">
+            <BookmarkCheck size={15} strokeWidth={2.25} />
+          </span>
+            <p className="text-sm font-bold text-foreground">Beneficiaries</p>
+          </div>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+          {beneficiaries.length}
+        </span>
+        </header>
+        <div className="p-1.5">
           {beneficiaries.map((b) => {
             const displayName = b.billerName || b.label || b.billerUniqueCode
+            const masked = maskIdentifier(b.accountNumber ?? b.phoneNumber)
             return (
-                <button
+                <motion.button
                     key={b.id}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => onSelect(b)}
-                    className="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-secondary/50 transition-colors"
+                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-primary-tint/50"
                 >
-            <span
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-[11px]"
-                style={{ backgroundColor: providerColor(displayName) }}
-            >
-              {initialsOf(displayName)}
-            </span>
-                  <div className="text-left min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {b.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">{displayName}</p>
-                  </div>
-                  <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />
-                </button>
+                  <BillerMark name={displayName} size="sm" />
+                  <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-semibold text-foreground">
+                  {b.label || displayName}
+                </span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {displayName}
+                  {masked && <span className="font-mono"> · {masked}</span>}
+                </span>
+              </span>
+                  <ChevronRight
+                      size={15}
+                      className="flex-shrink-0 -translate-x-1 text-transparent transition-all duration-200 group-hover:translate-x-0 group-hover:text-primary"
+                  />
+                </motion.button>
             )
           })}
         </div>
-      </div>
+      </section>
   )
 }
 
@@ -201,6 +275,7 @@ export function BillsScreen() {
     if (billsActiveTab === 'transactions') {
       refreshTransactionHistory()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [billsActiveTab])
 
   const query = searchQuery.trim().toLowerCase()
@@ -274,35 +349,36 @@ export function BillsScreen() {
         </div>
 
         {billsActiveTab === 'bills' ? (
-            <div className="grid gap-6 lg:grid-cols-3 items-start">
+            <div className="grid items-start gap-6 lg:grid-cols-3">
               {/* Left rail: search + beneficiaries */}
-              <div className="space-y-5 lg:col-span-1">
-                <div className="relative">
+              <div className="space-y-5 lg:sticky lg:top-24 lg:col-span-1">
+                <div className="group relative">
                   <Search
                       size={17}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary"
                   />
                   <input
                       type="text"
-                      placeholder="Find a biller"
+                      placeholder="Search billers — MTN, DStv, Ikeja…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full h-12 pl-11 pr-4 bg-card border border-card-border rounded-xl text-sm placeholder:text-muted-foreground/70 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
+                      className="h-12 w-full rounded-xl border border-card-border bg-card pl-11 pr-4 text-sm text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
                   />
                 </div>
 
                 {billerBeneficiaries.length > 0 ? (
                     <BeneficiariesCard beneficiaries={billerBeneficiaries} onSelect={handleSelectBeneficiary} />
                 ) : (
-                    <div className="p-5 bg-primary-tint border border-primary/15 rounded-2xl">
+                    <div className="rounded-2xl border border-primary/15 bg-primary-tint p-5">
                       <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full bg-card flex items-center justify-center flex-shrink-0 elevation-1">
+                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-card elevation-1">
                           <BellRing className="text-primary" size={17} strokeWidth={2} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-sm text-foreground mb-0.5">Update on Bills</h3>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            Pay a bill and check "Save as beneficiary" to have it show up here next time
+                        <div className="min-w-0 flex-1">
+                          <h3 className="mb-0.5 text-sm font-bold text-foreground">Save your billers</h3>
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            Pay a bill and check &quot;Save as beneficiary&quot; to have it show up here
+                            next time
                           </p>
                         </div>
                       </div>
@@ -310,17 +386,17 @@ export function BillsScreen() {
                 )}
               </div>
 
-              {/* Biller categories grid */}
+              {/* Right: biller categories */}
               <div className="grid gap-5 sm:grid-cols-2 lg:col-span-2">
                 {loading && (
-                    <div className="sm:col-span-2 bg-card border border-card-border rounded-2xl p-8 flex items-center justify-center gap-2 text-muted-foreground elevation-1">
+                    <div className="flex items-center justify-center gap-2 rounded-2xl border border-card-border bg-card p-8 text-muted-foreground elevation-1 sm:col-span-2">
                       <Loader2 size={18} className="animate-spin" />
                       <span className="text-sm">Loading billers…</span>
                     </div>
                 )}
 
                 {!loading && error && (
-                    <div className="sm:col-span-2 bg-card border border-card-border rounded-2xl p-8 flex flex-col items-center text-center gap-2 elevation-1">
+                    <div className="flex flex-col items-center gap-2 rounded-2xl border border-card-border bg-card p-8 text-center elevation-1 sm:col-span-2">
                       <AlertCircle size={22} className="text-destructive" />
                       <p className="text-sm font-semibold text-foreground">Could not load billers</p>
                       <p className="text-xs text-muted-foreground">{error}</p>
@@ -328,18 +404,42 @@ export function BillsScreen() {
                 )}
 
                 {!loading && !error && filtered.length === 0 && (
-                    <div className="sm:col-span-2 bg-card border border-card-border rounded-2xl p-8 text-center elevation-1">
-                      <p className="text-sm font-semibold text-foreground mb-1">No billers found</p>
+                    <div className="rounded-2xl border border-card-border bg-card p-8 text-center elevation-1 sm:col-span-2">
+                      <p className="mb-1 text-sm font-semibold text-foreground">No billers found</p>
                       <p className="text-xs text-muted-foreground">
                         {query ? 'Try a different search term' : 'Run the biller catalog sync on the backend first'}
                       </p>
                     </div>
                 )}
 
-                {!loading && !error && filtered.length > 0 && expandedCategory && (
+                {/* Active search — one flat result list beats four filtered cards */}
+                {!loading && !error && filtered.length > 0 && query && (
+                    <section className="overflow-hidden rounded-2xl border border-card-border bg-card elevation-1 sm:col-span-2">
+                      <header className="border-b border-card-border/70 px-4 py-3.5">
+                        <p className="text-sm font-bold text-foreground">
+                          Results
+                          <span className="ml-2 font-medium text-muted-foreground">
+                      {filtered.length} for &quot;{searchQuery.trim()}&quot;
+                    </span>
+                        </p>
+                      </header>
+                      <div className="grid gap-1 p-1.5 sm:grid-cols-2">
+                        {filtered.map((biller) => (
+                            <BillerRow
+                                key={biller.uniqueCode}
+                                biller={biller}
+                                onSelect={handleSelectBiller}
+                                secondary={CATEGORY_META[biller.categoryPath]?.title ?? biller.categoryPath}
+                            />
+                        ))}
+                      </div>
+                    </section>
+                )}
+
+                {!loading && !error && filtered.length > 0 && !query && expandedCategory && (
                     <div className="sm:col-span-2">
                       <CategoryFullList
-                          title={CATEGORY_META[expandedCategory]?.title ?? expandedCategory}
+                          categoryPath={expandedCategory}
                           billers={byCategory(expandedCategory)}
                           onBack={() => setExpandedCategory(null)}
                           onSelect={handleSelectBiller}
@@ -347,13 +447,12 @@ export function BillsScreen() {
                     </div>
                 )}
 
-                {!loading && !error && filtered.length > 0 && !expandedCategory && (
+                {!loading && !error && filtered.length > 0 && !query && !expandedCategory && (
                     <>
                       {CATEGORY_ORDER.map((categoryPath) => (
                           <BillerSection
                               key={categoryPath}
                               categoryPath={categoryPath}
-                              title={CATEGORY_META[categoryPath].title}
                               billers={byCategory(categoryPath)}
                               onSelect={handleSelectBiller}
                               onSeeMore={setExpandedCategory}
