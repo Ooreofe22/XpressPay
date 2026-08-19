@@ -71,14 +71,37 @@ function formatDateGroup(dateStr: string): string {
   return date.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'short' })
 }
 
-/** Brand mark for a biller — gradient rounded-square monogram instead of a flat circle. */
-const BillerMark: React.FC<{ name: string; size?: 'sm' | 'md' }> = ({ name, size = 'md' }) => {
+/** Brand mark for a biller — real logo when XpressPay supplies one, otherwise a gradient monogram. */
+const BillerMark: React.FC<{ name: string; imageUrl?: string | null; size?: 'sm' | 'md' }> = ({
+  name,
+  imageUrl,
+  size = 'md',
+}) => {
   const c = providerColor(name)
+  const [imgFailed, setImgFailed] = useState(false)
+  const dimensions = size === 'md' ? 'h-10 w-10' : 'h-9 w-9'
+
+  if (imageUrl && !imgFailed) {
+    return (
+        <span
+            className={`flex flex-shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-white ring-1 ring-inset ring-card-border ${dimensions}`}
+        >
+        <img
+            src={imageUrl}
+            alt={name}
+            className="h-full w-full object-contain p-1"
+            onError={() => setImgFailed(true)}
+            loading="lazy"
+        />
+      </span>
+    )
+  }
+
   return (
       <span
           className={`flex flex-shrink-0 items-center justify-center rounded-[10px] font-bold text-white ring-1 ring-inset ring-white/20 ${
-              size === 'md' ? 'h-10 w-10 text-[11px]' : 'h-9 w-9 text-[10px]'
-          }`}
+              size === 'md' ? 'text-[11px]' : 'text-[10px]'
+          } ${dimensions}`}
           style={{
             backgroundImage: `linear-gradient(140deg, ${c} 0%, ${c} 45%, rgba(0,0,0,0.32) 165%)`,
             boxShadow: `0 2px 8px -2px ${c}55`,
@@ -100,7 +123,7 @@ const BillerRow: React.FC<{
         onClick={() => onSelect(biller)}
         className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-primary-tint/50"
     >
-      <BillerMark name={biller.name} />
+      <BillerMark name={biller.name} imageUrl={biller.imageUrl} />
       <span className="min-w-0 flex-1">
       <span className="block truncate text-[13px] font-semibold text-foreground">
         {biller.name}

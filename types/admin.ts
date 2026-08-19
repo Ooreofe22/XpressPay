@@ -40,6 +40,7 @@ export interface AdminBiller {
   categoryPath: string
   active: boolean
   lastSyncedAt: string | null
+  imageUrl: string | null
 }
 
 export interface AdminStats {

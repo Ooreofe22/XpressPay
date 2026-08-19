@@ -7,6 +7,27 @@ import { timeAgo } from '@/lib/format'
 import { CategoryIcon, categoryLabel } from '@/components/admin/CategoryIcon'
 import type { AdminBiller } from '@/types/admin'
 
+/** Real biller logo when available, falling back to the category icon on missing/broken images. */
+function BillerAvatar({ biller }: { biller: AdminBiller }) {
+  const [failed, setFailed] = useState(false)
+
+  if (!biller.imageUrl || failed) {
+    return <CategoryIcon category={biller.categoryPath} size="sm" />
+  }
+
+  return (
+    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-inset ring-card-border">
+      <img
+        src={biller.imageUrl}
+        alt={biller.name}
+        className="h-full w-full object-contain p-1"
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    </span>
+  )
+}
+
 export default function BillersPage() {
   const [billers, setBillers] = useState<AdminBiller[]>([])
   const [loading, setLoading] = useState(true)
@@ -121,7 +142,7 @@ export default function BillersPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <CategoryIcon category={biller.categoryPath} size="sm" />
+                    <BillerAvatar biller={biller} />
                     <div>
                       <p className="text-sm font-bold text-foreground">{biller.name}</p>
                       <p className="font-mono text-[11px] text-muted-foreground">{biller.uniqueCode}</p>
