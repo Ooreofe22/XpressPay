@@ -32,10 +32,7 @@ interface AppContextType {
   authScreen: AuthScreen
   setAuthScreen: (screen: AuthScreen) => void
 
-  // true while we're attempting to restore a session from localStorage on
-  // first mount (e.g. after redirecting back from Paystack). Screens that
-  // gate on isAuthenticated should wait for this to go false before
-  // redirecting or they'll bounce a valid session for a frame.
+
   rehydrating: boolean
 
   // email currently mid-flow (set by SignUpEmailScreen/LoginEmailScreen, read
@@ -51,7 +48,7 @@ interface AppContextType {
   resendSignupOtp: () => Promise<void>
   verifySignupOtp: (otp: string) => Promise<void>
 
-  // -- Login --
+
   requestLoginOtp: (email: string) => Promise<void>
   verifyLoginOtp: (otp: string) => Promise<void>
 

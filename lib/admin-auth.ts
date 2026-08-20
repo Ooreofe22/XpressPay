@@ -1,18 +1,7 @@
-/**
- * Client-side admin gate. Two things are required to reach /admin:
- *   1. The logged-in user's email (from their regular session JWT) is on
- *      ADMIN_EMAIL_ALLOWLIST below.
- *   2. A valid X-Admin-Key is stored in localStorage (entered once at
- *      /admin/login, checked against admin.api-key on the backend).
- *
- * This is NOT real authorization — it's a client-side speed bump. The actual
- * security boundary is the X-Admin-Key check on the server; anyone with the
- * key can call /admin/** endpoints directly regardless of this allowlist.
- * Swap for a real admin role on the User entity + JWT claim before this goes
- * anywhere beyond internal/demo use.
- */
+
 export const ADMIN_EMAIL_ALLOWLIST: string[] = [
-  'ooreofepopoola@gmail.com'
+  'ooreofepopoola@gmail.com',
+    'ooreofepopoola2@gmail.com'
 ]
 
 const ADMIN_KEY_STORAGE = 'payxpress_admin_key'
