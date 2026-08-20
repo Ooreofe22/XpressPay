@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ooreofe Popoola — Backend Engineer</title>
+<meta name="description" content="Ooreofe Popoola — backend engineer building payment infrastructure. Spring Boot, PostgreSQL, Paystack/Flutterwave, Azure.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=JetBrains+Mono:ital,wght@0,300..800;1,400&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   LEDGER — design tokens
+   Concept: the site reads like the audit log of a payment system.
+   Credits are green. Debits are orange. Nothing is decoration
+   that isn't also information.
+   ================================================================ */
+:root{
+  --ink:        #070b08;   /* vault green-black, not neutral black */
+  --ink-2:      #0b120d;
+  --ink-3:      #101a13;
+  --line:       rgba(74, 222, 128, .13);
+  --line-hard:  rgba(74, 222, 128, .32);
+  --paper:      #e6f0e8;   /* green-tinted off-white */
+  --muted:      #6f8276;
+  --credit:     #16a34a;   /* PayXpress green  — money in  */
+  --credit-hi:  #4ade80;   /* terminal green   — live data */
+  --debit:      #e8542a;   /* PayXpress orange — money out / alerts */
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'Archivo', system-ui, sans-serif;
+  --disp-stretch: 118%;
+  --pad: clamp(20px, 5vw, 72px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{
+  background:var(--ink);
+  color:var(--paper);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::selection{background:var(--credit);color:var(--ink)}
+
+/* faint ruled-ledger background */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 39px, rgba(74,222,128,.025) 39px 40px),
+    radial-gradient(1200px 600px at 80% -10%, rgba(22,163,74,.07), transparent 60%);
+}
+#page{position:relative;z-index:1}
+
+a{color:inherit;text-decoration:none}
+.mono{font-family:var(--mono)}
+
+/* ---------- top bar ---------- */
+.bar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:1.5rem;
+  padding:.65rem var(--pad);
+  background:rgba(7,11,8,.85);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;
+}
+.bar .mark{
+  font-weight:800;color:var(--credit-hi);
+  border:1px solid var(--line-hard);padding:.15rem .5rem;border-radius:2px;
+}
+.bar .ledger-id{color:var(--muted);text-transform:uppercase}
+.bar .spacer{flex:1}
+.bar nav{display:flex;gap:1.25rem}
+.bar nav a{color:var(--muted);transition:color .2s}
+.bar nav a:hover{color:var(--credit-hi)}
+.status{display:flex;align-items:center;gap:.45rem;color:var(--credit-hi)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--credit-hi);box-shadow:0 0 10px var(--credit-hi)}
+@media (prefers-reduced-motion: no-preference){
+  .dot{animation:pulse 2.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+}
+@media (max-width:720px){.bar nav,.bar .ledger-id{display:none}}
+
+/* ---------- ticker ---------- */
+.ticker{
+  border-bottom:1px solid var(--line);
+  overflow:hidden;white-space:nowrap;
+  font-family:var(--mono);font-size:.68rem;color:var(--muted);
+  padding:.4rem 0;
+}
+.ticker .lane{display:inline-block;padding-right:4rem}
+@media (prefers-reduced-motion: no-preference){
+  .ticker .rail{display:inline-block;animation:slide 55s linear infinite}
+  @keyframes slide{to{transform:translateX(-50%)}}
+}
+.ticker b{color:var(--credit);font-weight:500}
+.ticker i{color:var(--debit);font-style:normal}
+
+/* ---------- hero ---------- */
+.hero{
+  min-height:calc(100vh - 6rem);
+  display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);
+  gap:3rem;align-items:end;
+  padding:clamp(3rem,8vh,6rem) var(--pad) clamp(3rem,7vh,5rem);
+}
+@media (max-width:900px){.hero{grid-template-columns:1fr;align-items:start}}
+.kicker{
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--credit);margin-bottom:1.4rem;
+}
+.kicker i{color:var(--muted);font-style:normal}
+h1{
+  font-weight:850;font-stretch:var(--disp-stretch);
+  font-size:clamp(2.6rem, 7.2vw, 6rem);
+  line-height:.98;letter-spacing:-.02em;text-transform:uppercase;
+}
+h1 .alt{color:var(--credit-hi)}
+h1 .debit{color:var(--debit)}
+.hero p.sub{
+  margin-top:1.6rem;max-width:34rem;color:var(--muted);
+  font-size:clamp(.95rem,1.4vw,1.08rem);
+}
+.hero p.sub b{color:var(--paper);font-weight:600}
+.hero-facts{
+  margin-top:2.2rem;display:flex;flex-wrap:wrap;gap:0 2.2rem;
+  font-family:var(--mono);font-size:.72rem;color:var(--muted);
+}
+.hero-facts span{padding:.4rem 0;border-top:1px solid var(--line)}
+.hero-facts b{color:var(--credit-hi);font-weight:600}
+
+/* boot log column */
+.bootlog{
+  font-family:var(--mono);font-size:.7rem;line-height:1.9;color:var(--muted);
+  border:1px solid var(--line);border-radius:4px;
+  background:linear-gradient(180deg, var(--ink-2), transparent);
+  padding:1.1rem 1.2rem;min-height:14rem;
+  mask-image:linear-gradient(to bottom, black 78%, transparent);
+}
+.bootlog .ln{opacity:0}
+.bootlog .ln.on{opacity:1}
+@media (prefers-reduced-motion: no-preference){
+  .bootlog .ln.on{animation:lnin .18s steps(2) both}
+  @keyframes lnin{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+}
+.bootlog .ok{color:var(--credit)}
+.bootlog .warn{color:var(--debit)}
+.bootlog .dim{color:#3d4a41}
+
+/* ---------- sections ---------- */
+section{padding:clamp(4rem,10vh,7.5rem) var(--pad)}
+.sec-head{
+  display:flex;align-items:baseline;gap:1.2rem;flex-wrap:wrap;
+  border-bottom:1px solid var(--line-hard);padding-bottom:1rem;margin-bottom:3rem;
+}
+.sec-head .ref{font-family:var(--mono);font-size:.72rem;color:var(--debit);letter-spacing:.15em}
+.sec-head h2{
+  font-weight:800;font-stretch:var(--disp-stretch);text-transform:uppercase;
+  font-size:clamp(1.4rem,3vw,2.2rem);letter-spacing:-.01em;
+}
+.sec-head .note{margin-left:auto;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+@media (max-width:720px){.sec-head .note{margin-left:0;width:100%}}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(22px)}
+.reveal.in{opacity:1;transform:none;transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+@media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none}}
+
+/* ---------- ledger entries (projects) ---------- */
+.entry{
+  border:1px solid var(--line);border-radius:6px;
+  background:linear-gradient(180deg, var(--ink-2), var(--ink));
+  padding:clamp(1.4rem,3vw,2.4rem);
+  margin-bottom:2rem;
+  transition:border-color .25s;
+}
+.entry:hover{border-color:var(--line-hard)}
+.entry-top{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem;font-family:var(--mono);font-size:.7rem}
+.entry-top .txn{color:var(--muted);letter-spacing:.12em}
+.chip{
+  padding:.18rem .55rem;border-radius:2px;letter-spacing:.1em;font-weight:600;
+  border:1px solid var(--line-hard);color:var(--credit-hi);
+}
+.chip.live{background:rgba(22,163,74,.12)}
+.chip.wip{border-color:rgba(232,84,42,.5);color:var(--debit);background:rgba(232,84,42,.08)}
+.entry-top .hash{margin-left:auto;color:#3d4a41;letter-spacing:0}
+@media (max-width:720px){.entry-top .hash{display:none}}
+.entry h3{
+  font-weight:800;font-stretch:var(--disp-stretch);text-transform:uppercase;
+  font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.05;letter-spacing:-.015em;
+}
+.entry h3 small{display:block;font:500 .78rem/1.6 var(--mono);color:var(--muted);text-transform:none;letter-spacing:.04em;margin-top:.4rem}
+.entry .lede{margin:1.1rem 0 1.6rem;max-width:44rem;color:#b8c8bc}
+.entry-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:2.4rem}
+@media (max-width:900px){.entry-grid{grid-template-columns:1fr}}
+.ledger-lines{list-style:none}
+.ledger-lines li{
+  display:grid;grid-template-columns:auto 1fr;gap:.9rem;
+  padding:.85rem 0;border-top:1px solid var(--line);
+}
+.ledger-lines li:last-child{border-bottom:1px solid var(--line)}
+.ledger-lines .amt{font-family:var(--mono);font-size:.68rem;color:var(--credit);white-space:nowrap;padding-top:.15rem}
+.ledger-lines .amt.dr{color:var(--debit)}
+.ledger-lines p{font-size:.9rem;color:#b8c8bc}
+.ledger-lines p b{color:var(--paper);font-weight:600}
+.stackline{margin-top:1.4rem;display:flex;flex-wrap:wrap;gap:.5rem}
+.stackline span{
+  font-family:var(--mono);font-size:.65rem;color:var(--muted);
+  border:1px solid var(--line);border-radius:2px;padding:.22rem .5rem;
+  transition:color .2s,border-color .2s;
+}
+.entry:hover .stackline span{color:#93a89a}
+.entry-links{margin-top:1.6rem;display:flex;gap:1.4rem;flex-wrap:wrap;font-family:var(--mono);font-size:.72rem}
+.entry-links a,.entry-links span.na{color:var(--credit-hi);border-bottom:1px solid var(--line-hard);padding-bottom:.15rem}
+.entry-links a:hover{color:var(--paper);border-color:var(--paper)}
+.entry-links span.na{color:var(--muted);border-color:var(--line)}
+
+/* flow diagram */
+.flow{border:1px solid var(--line);border-radius:4px;background:var(--ink-2);padding:1rem}
+.flow figcaption{font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:.6rem}
+.flow svg{width:100%;height:auto;display:block}
+.flow text{font-family:var(--mono);font-size:8.5px;fill:#93a89a;letter-spacing:.04em}
+.flow .nodebox{fill:var(--ink-3);stroke:rgba(74,222,128,.35)}
+.flow .nodebox.hot{stroke:rgba(232,84,42,.6)}
+.flow .wire{stroke:rgba(74,222,128,.45);stroke-width:1;fill:none;stroke-dasharray:4 4}
+.flow .wire.hot{stroke:rgba(232,84,42,.55)}
+@media (prefers-reduced-motion: no-preference){
+  .flow.in .wire{animation:dashmove 1.4s linear infinite}
+  @keyframes dashmove{to{stroke-dashoffset:-16}}
+}
+
+/* ---------- stack ---------- */
+.stack-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+@media (max-width:1000px){.stack-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.stack-grid{grid-template-columns:1fr}}
+.stack-col{background:var(--ink);padding:1.6rem 1.4rem}
+.stack-col h4{font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--debit);margin-bottom:1.2rem}
+.stack-col ul{list-style:none}
+.stack-col li{
+  font-size:.9rem;padding:.5rem 0;border-top:1px solid var(--line);color:#b8c8bc;
+  display:flex;justify-content:space-between;gap:1rem;align-items:baseline;
+}
+.stack-col li em{font:italic 400 .62rem var(--mono);color:var(--muted)}
+.stack-col li b{font-weight:600;color:var(--paper)}
+
+/* ---------- journey ---------- */
+.journey{max-width:46rem}
+.jrow{display:grid;grid-template-columns:8.5rem 1fr;gap:1.6rem;padding:1.4rem 0;border-top:1px solid var(--line)}
+@media (max-width:560px){.jrow{grid-template-columns:1fr;gap:.4rem}}
+.jrow .when{font-family:var(--mono);font-size:.68rem;color:var(--credit);letter-spacing:.1em;padding-top:.3rem}
+.jrow h5{font-weight:700;font-size:1.05rem;margin-bottom:.35rem}
+.jrow p{font-size:.92rem;color:#9db2a3}
+.jrow.next .when{color:var(--debit)}
+
+/* ---------- contact ---------- */
+.contact{border-top:1px solid var(--line-hard)}
+.contact h2.big{
+  font-weight:850;font-stretch:var(--disp-stretch);text-transform:uppercase;
+  font-size:clamp(2.2rem,6vw,4.6rem);line-height:1;letter-spacing:-.02em;margin-bottom:1.2rem;
+}
+.contact p{max-width:36rem;color:var(--muted);margin-bottom:2.4rem}
+.contact-row{display:flex;flex-wrap:wrap;gap:1rem}
+.btn{
+  font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;
+  border:1px solid var(--line-hard);border-radius:3px;padding:.85rem 1.4rem;
+  color:var(--credit-hi);transition:all .2s;
+}
+.btn:hover{background:var(--credit);color:var(--ink);border-color:var(--credit)}
+.btn.primary{background:var(--credit);color:var(--ink)}
+.btn.primary:hover{background:var(--credit-hi)}
+.btn.todo{border-style:dashed;color:var(--muted)}
+
+footer{
+  padding:2rem var(--pad) 3rem;border-top:1px solid var(--line);
+  display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;
+  font-family:var(--mono);font-size:.65rem;color:#3d4a41;letter-spacing:.08em;
+}
+</style>
+</head>
+<body>
+<div id="page">
+
+  <header class="bar">
+    <span class="mark">OP</span>
+    <span class="ledger-id">ledger://ooreofe-popoola</span>
+    <span class="status"><span class="dot"></span>LIVE</span>
+    <span class="spacer"></span>
+    <nav>
+      <a href="#work">WORK</a>
+      <a href="#stack">STACK</a>
+      <a href="#journey">JOURNEY</a>
+      <a href="#contact">CONTACT</a>
+    </nav>
+    <span class="mono" id="clock" aria-hidden="true"></span>
+  </header>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="rail" id="rail">
+      <span class="lane">POST /api/v1/bills <b>200</b> sig=HMAC-SHA512 · webhook <b>verified×2</b> · wallet LOCKED→CREDITED <b>OK</b> · <i>idempotency-key honoured</i> · POST /api/v1/wallet/debit <b>200</b> lock=PESSIMISTIC_WRITE · paystack.charge.success <b>confirmed</b> · flutterwave.transfer <b>settled</b> · OTP dispatched <b>250ms</b> ·</span>
+    </div>
+  </div>
+
+  <!-- ================= HERO ================= -->
+  <section class="hero" id="top">
+    <div>
+      <p class="kicker">BACKEND ENGINEER <i>·</i> PAYMENT INFRASTRUCTURE <i>·</i> LAGOS, NG</p>
+      <h1>I build the <span class="alt">rails</span> money <span class="debit">moves</span> on.</h1>
+      <p class="sub">Spring Boot, PostgreSQL and signed requests — in production, with real users and real money. Software engineering student at <b>Bells University of Technology</b>, currently on industrial attachment shipping fintech systems under a CTO who doesn't believe in toy projects.</p>
+      <div class="hero-facts">
+        <span><b>2</b> LIVE PLATFORMS</span>
+        <span>REQUESTS SIGNED <b>HMAC-SHA512</b></span>
+        <span>WALLETS <b>RACE-PROOF</b></span>
+        <span>NEXT: <b>AZURE / AZ-104</b></span>
+      </div>
+    </div>
+    <div class="bootlog" id="bootlog" aria-hidden="true">
+      <div class="ln"><span class="dim">$</span> ledger --open ooreofe</div>
+      <div class="ln"><span class="ok">[OK]</span> identity ..... Ooreofeoluwa Popoola Kayode</div>
+      <div class="ln"><span class="ok">[OK]</span> role ......... backend / payments</div>
+      <div class="ln"><span class="ok">[OK]</span> stack ........ java · spring-boot · postgres</div>
+      <div class="ln"><span class="warn">[MIGRATED]</span> origin ... javascript/frontend → backend</div>
+      <div class="ln"><span class="ok">[OK]</span> payxpress .... LIVE @ paypei.online</div>
+      <div class="ln"><span class="ok">[OK]</span> staysphere ... DEPLOYED</div>
+      <div class="ln"><span class="warn">[QUEUED]</span> azure ...... az-104 in progress</div>
+      <div class="ln"><span class="dim">audit trail follows ↓</span></div>
+    </div>
+  </section>
+
+  <!-- ================= WORK ================= -->
+  <section id="work">
+    <div class="sec-head reveal">
+      <span class="ref">001</span>
+      <h2>Featured Work</h2>
+      <span class="note">every entry below is real, deployed, and mine</span>
+    </div>
+
+    <!-- PayXpress -->
+    <article class="entry reveal">
+      <div class="entry-top">
+        <span class="txn">TXN-001</span>
+        <span class="chip live">LIVE</span>
+        <span class="chip wip">MOBILE IN PROGRESS</span>
+        <span class="hash" data-scramble>sha512:9f2c…a41e</span>
+      </div>
+      <h3>PayXpress <small>fintech · bill payments &amp; wallets · Nigeria</small></h3>
+      <p class="lede">A bill-payment and wallet platform for the Nigerian market. Next.js on Vercel in front, Spring Boot on Railway behind, real money in the middle — so the interesting problems are all about trust, integrity and concurrency.</p>
+      <div class="entry-grid">
+        <ul class="ledger-lines">
+          <li><span class="amt">CR&nbsp;SECURITY</span><p><b>Signed biller requests.</b> Every call to the billers API carries an HMAC-SHA512 signature — a tampered payload never survives the gateway.</p></li>
+          <li><span class="amt">CR&nbsp;INTEGRITY</span><p><b>Dual-confirmation payments.</b> Paystack webhooks are verified twice — signature check plus a server-side re-query — before a single kobo touches a wallet.</p></li>
+          <li><span class="amt dr">DR&nbsp;RACE&nbsp;COND.</span><p><b>Race-proof wallet.</b> Balance mutations run under pessimistic database locks, so two simultaneous debits can't double-spend the same balance.</p></li>
+          <li><span class="amt">CR&nbsp;AUTH</span><p><b>Auth migration in production.</b> Moved the platform off phone/BVN verification to email OTP without breaking existing users.</p></li>
+          <li><span class="amt dr">DR&nbsp;IN&nbsp;FLIGHT</span><p><b>Mobile client</b> in React Native, under active development.</p></li>
+        </ul>
+        <figure class="flow reveal">
+          <figcaption>payment path — as built</figcaption>
+          <svg viewBox="0 0 320 220" role="img" aria-label="Diagram: client to API gateway, HMAC-signed call to billers, Paystack charge confirmed by signature-verified webhook plus re-query, then wallet credited under a pessimistic lock">
+            <rect class="nodebox" x="10" y="10" width="90" height="28" rx="3"/><text x="22" y="27">CLIENT (Next.js)</text>
+            <rect class="nodebox" x="10" y="78" width="90" height="28" rx="3"/><text x="20" y="95">API (Spring Boot)</text>
+            <rect class="nodebox" x="220" y="44" width="90" height="28" rx="3"/><text x="243" y="61">PAYSTACK</text>
+            <rect class="nodebox hot" x="220" y="112" width="90" height="28" rx="3"/><text x="228" y="129">BILLERS · HMAC-512</text>
+            <rect class="nodebox" x="10" y="178" width="120" height="28" rx="3"/><text x="20" y="195">WALLET 🔒 PESS. LOCK</text>
+            <path class="wire" d="M55 38 V78"/>
+            <path class="wire" d="M100 88 H180 Q195 88 200 74 L220 60"/>
+            <path class="wire hot" d="M100 98 H180 Q195 98 200 110 L220 124"/>
+            <path class="wire" d="M265 72 V88 Q265 100 240 104 L140 122 Q70 134 70 160 V178"/>
+            <text x="128" y="80">charge</text>
+            <text x="128" y="112">signed call</text>
+            <text x="150" y="150">webhook · verified ×2</text>
+            <text x="12" y="168">credit only after both confirms</text>
+          </svg>
+        </figure>
+      </div>
+      <div class="stackline">
+        <span>Spring Boot</span><span>Java</span><span>PostgreSQL</span><span>Paystack</span><span>HMAC-SHA512</span><span>Webhooks</span><span>Next.js</span><span>Vercel</span><span>Railway</span><span>React Native</span>
+      </div>
+      <div class="entry-links">
+        <a href="https://paypei.online" target="_blank" rel="noopener">paypei.online ↗</a>
+        <span class="na">repo private — walkthrough on request</span>
+      </div>
+    </article>
+
+    <!-- StaySphere -->
+    <article class="entry reveal">
+      <div class="entry-top">
+        <span class="txn">TXN-002</span>
+        <span class="chip live">DEPLOYED</span>
+        <span class="hash" data-scramble>sha512:47be…03dd</span>
+      </div>
+      <h3>StaySphere <small>premium accommodation booking · Africa</small></h3>
+      <p class="lede">A booking platform for premium African stays — search, book, pay, get a real confirmation email. Built on a modern Java baseline rather than legacy tutorials.</p>
+      <ul class="ledger-lines">
+        <li><span class="amt">CR&nbsp;PLATFORM</span><p><b>Spring Boot 3.4 on JDK 21</b> with PostgreSQL — current stack, not classroom Java.</p></li>
+        <li><span class="amt">CR&nbsp;PAYMENTS</span><p><b>Flutterwave integration</b> for card and local payment methods across African markets.</p></li>
+        <li><span class="amt">CR&nbsp;AUTH</span><p><b>Stateless JWT auth</b> guarding booking and account flows end to end.</p></li>
+        <li><span class="amt">CR&nbsp;COMMS</span><p><b>Transactional email that actually sends</b> — booking confirmations wired into the flow, not mocked.</p></li>
+      </ul>
+      <div class="stackline">
+        <span>Spring Boot 3.4</span><span>JDK 21</span><span>PostgreSQL</span><span>JWT</span><span>Flutterwave</span><span>React</span><span>TypeScript</span><span>Vercel</span><span>Railway</span>
+      </div>
+      <div class="entry-links">
+        <span class="na">[ live URL — coming soon ]</span>
+        <span class="na">repo private — walkthrough on request</span>
+      </div>
+    </article>
+
+    <!-- HMS -->
+    <article class="entry reveal">
+      <div class="entry-top">
+        <span class="txn">TXN-003</span>
+        <span class="chip">SETTLED</span>
+        <span class="hash" data-scramble>sha512:c1a0…77f2</span>
+      </div>
+      <h3>Hospital Management System <small>records · roles · audit</small></h3>
+      <p class="lede">Patient, staff and appointment management with proper persistence and access control — Hibernate ORM over PostgreSQL, Spring Security for role boundaries, and AOP for cross-cutting concerns like audit logging.</p>
+      <div class="stackline">
+        <span>Spring Boot</span><span>Hibernate ORM</span><span>JPA</span><span>PostgreSQL</span><span>Spring Security</span><span>AOP</span>
+      </div>
+    </article>
+
+    <!-- Job Portal -->
+    <article class="entry reveal">
+      <div class="entry-top">
+        <span class="txn">TXN-004</span>
+        <span class="chip">SETTLED</span>
+        <span class="hash" data-scramble>sha512:e83b…1c09</span>
+      </div>
+      <h3>Job Portal API <small>REST · clean layering</small></h3>
+      <p class="lede">A Spring Boot REST API for job listings and applications — clean controller/service/repository layering, the project where the backend fundamentals clicked.</p>
+      <div class="stackline">
+        <span>Spring Boot</span><span>REST</span><span>JPA</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- ================= STACK ================= -->
+  <section id="stack">
+    <div class="sec-head reveal">
+      <span class="ref">002</span>
+      <h2>Stack</h2>
+      <span class="note">tools are listed only if they've shipped</span>
+    </div>
+    <div class="stack-grid reveal">
+      <div class="stack-col">
+        <h4>Backend</h4>
+        <ul>
+          <li><b>Java</b><em>daily driver</em></li>
+          <li><b>Spring Boot</b><em>2 live systems</em></li>
+          <li><b>Spring Security</b><em>prod auth</em></li>
+          <li><b>JPA / Hibernate</b><em>prod ORM</em></li>
+          <li><b>PostgreSQL</b><em>prod DB</em></li>
+        </ul>
+      </div>
+      <div class="stack-col">
+        <h4>Payments</h4>
+        <ul>
+          <li><b>Paystack</b><em>live integration</em></li>
+          <li><b>Flutterwave</b><em>live integration</em></li>
+          <li><b>HMAC-SHA512 signing</b><em>prod</em></li>
+          <li><b>Webhook verification</b><em>dual-confirm</em></li>
+          <li><b>Wallet concurrency</b><em>pess. locking</em></li>
+        </ul>
+      </div>
+      <div class="stack-col">
+        <h4>Frontend</h4>
+        <ul>
+          <li><b>Next.js / React</b><em>origin story</em></li>
+          <li><b>TypeScript</b><em>prod</em></li>
+          <li><b>React Native</b><em>in progress</em></li>
+        </ul>
+      </div>
+      <div class="stack-col">
+        <h4>Infra &amp; Cloud</h4>
+        <ul>
+          <li><b>Docker</b><em>containerised</em></li>
+          <li><b>Railway</b><em>prod backend</em></li>
+          <li><b>Vercel</b><em>prod frontend</em></li>
+          <li><b>Azure</b><em>AZ-104 track</em></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= JOURNEY ================= -->
+  <section id="journey">
+    <div class="sec-head reveal">
+      <span class="ref">003</span>
+      <h2>Audit Trail</h2>
+      <span class="note">how a frontend dev became a payments engineer</span>
+    </div>
+    <div class="journey reveal">
+      <div class="jrow">
+        <span class="when">ORIGIN</span>
+        <div><h5>JavaScript roots</h5><p>Started in frontend — JavaScript, React, interfaces. Learned to care about what users actually touch, which turns out to matter when you later build what they can't see.</p></div>
+      </div>
+      <div class="jrow">
+        <span class="when">SIWES · DAY 1</span>
+        <div><h5>Thrown in the deep end</h5><p>Industrial attachment under a CTO with zero patience for toy work. Backend knowledge on arrival: none. Assignment: production systems anyway.</p></div>
+      </div>
+      <div class="jrow">
+        <span class="when">MONTHS, NOT YEARS</span>
+        <div><h5>Java → Spring Boot → production</h5><p>Picked up Java, Spring Boot, PostgreSQL and cloud deployment specifically for the job in front of me. First real systems shipped within the attachment — not after graduation.</p></div>
+      </div>
+      <div class="jrow">
+        <span class="when">NOW</span>
+        <div><h5>Fintech infrastructure, live</h5><p>PayXpress running on a custom domain with real payments, signed requests and a race-proof wallet. StaySphere deployed. Still a student at Bells University of Technology; the systems don't know that.</p></div>
+      </div>
+      <div class="jrow next">
+        <span class="when">NEXT ENTRY</span>
+        <div><h5>Cloud &amp; DevOps — Azure</h5><p>On the AZ-104 track. The plan: own not just the services, but the infrastructure they run on.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CONTACT ================= -->
+  <section id="contact" class="contact">
+    <div class="reveal">
+      <p class="kicker">004 · OPEN LEDGER</p>
+      <h2 class="big">Let's settle<br><span style="color:var(--credit-hi)">a transaction.</span></h2>
+      <p>Hiring for backend, platform or payments work — internship, junior role, or a contract that needs someone who ships? The fastest confirmation path is email.</p>
+      <div class="contact-row">
+        <a class="btn primary" href="mailto:ooreofepopoola@gmail.com">EMAIL → ooreofepopoola@gmail.com</a>
+        <a class="btn" href="https://github.com/Ooreofe22" target="_blank" rel="noopener">GITHUB ↗</a>
+        <a class="btn todo" href="#" title="Add LinkedIn URL">LINKEDIN → [ add URL ]</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>© 2026 OOREOFEOLUWA POPOOLA KAYODE</span>
+    <span>DESIGNED &amp; BUILT BY HAND — NO TEMPLATE</span>
+    <span>LEDGER CLOSED · BALANCE: SHIPPING</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* clock — Lagos time in the top bar */
+  var clock = document.getElementById('clock');
+  function tick(){
+    try{
+      clock.textContent = 'LAGOS ' + new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'Africa/Lagos'}).format(new Date());
+    }catch(e){ clock.textContent = ''; }
+  }
+  tick(); setInterval(tick, 1000);
+
+  /* ticker — duplicate lane so the loop is seamless */
+  var rail = document.getElementById('rail');
+  rail.innerHTML += rail.innerHTML;
+
+  /* boot log — staggered line reveal (instant if reduced motion) */
+  var lines = document.querySelectorAll('#bootlog .ln');
+  if(reduced){
+    lines.forEach(function(l){ l.classList.add('on'); });
+  }else{
+    lines.forEach(function(l,i){ setTimeout(function(){ l.classList.add('on'); }, 260 + i*190); });
+  }
+
+  /* scroll reveals */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal, .flow').forEach(function(el){ io.observe(el); });
+
+  /* hash scramble on entry hover */
+  var CHARS = '0123456789abcdef';
+  document.querySelectorAll('[data-scramble]').forEach(function(el){
+    var finalText = el.textContent, timer = null;
+    el.closest('.entry').addEventListener('mouseenter', function(){
+      if(reduced || timer) return;
+      var n = 0;
+      timer = setInterval(function(){
+        el.textContent = finalText.replace(/[0-9a-f]/g, function(c, idx){
+          return idx < n ? c : CHARS[Math.floor(Math.random()*16)];
+        });
+        n += 3;
+        if(n > finalText.length){ el.textContent = finalText; clearInterval(timer); timer = null; }
+      }, 40);
+    });
+  });
+})();
+</script>
+</body>
+</html>
