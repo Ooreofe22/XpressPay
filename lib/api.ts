@@ -1,6 +1,6 @@
 import type { Biller, BillerValidateResult, BillCheckoutResponse, Transaction, BillBeneficiary } from '@/types'
 
-const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend-production.up.railway.app').replace(/\/+$/, '')
+const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend.onrender.com').replace(/\/+$/, '')
 
 /**
  * TODO: this reads a token that nothing currently writes. AppContext's login()
