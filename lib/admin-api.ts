@@ -15,7 +15,7 @@ import type { AdminAccount, AdminBiller, AdminStats, AdminTransaction } from '@/
  */
 
 const API_BASE_URL: string = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend-production.up.railway.app'
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend.onrender.com'
 ).replace(/\/+$/, '')
 
 export class AdminApiError extends Error {
