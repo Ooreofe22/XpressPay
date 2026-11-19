@@ -382,7 +382,7 @@ export function BillsScreen() {
                   />
                   <input
                       type="text"
-                      placeholder="Search billers — MTN, DStv, Ikeja…"
+                      placeholder="Search billers like MTN, DStv or Ikeja"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="h-12 w-full rounded-xl border border-card-border bg-card pl-11 pr-4 text-sm text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"

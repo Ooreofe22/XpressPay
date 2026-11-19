@@ -58,7 +58,7 @@ export default function TransactionsPage() {
 
   async function handleRequery(tx: AdminTransaction) {
     if (!tx.paystackReference) {
-      setRequeryError('No Paystack reference on this transaction — it may have been paid from wallet balance.')
+      setRequeryError('No Paystack reference on this transaction. It may have been paid from wallet balance.')
       return
     }
     setRequerying(true)

@@ -70,7 +70,7 @@ export default function AdminDashboardPage() {
               reconciliation
             </p>
             <p className="text-xs text-muted-foreground">
-              Paystack charge and biller fulfilment disagree — review before refunding anyone
+              Paystack charge and biller fulfilment disagree. Review before refunding anyone.
             </p>
           </div>
           <ArrowRight

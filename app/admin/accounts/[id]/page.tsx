@@ -113,7 +113,7 @@ export default function AccountDetailPage() {
           </div>
           {account.flagged && (
             <span className="inline-flex items-center gap-1 rounded-full bg-accent-tint px-2.5 py-1 text-xs font-bold text-accent">
-              <AlertTriangle size={13} /> Flagged — over ₦20,000 transaction
+              <AlertTriangle size={13} /> Flagged: transaction over ₦20,000
             </span>
           )}
         </div>

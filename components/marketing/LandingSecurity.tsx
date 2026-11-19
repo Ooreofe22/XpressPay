@@ -1,11 +1,11 @@
 import React from 'react'
-import { Reveal } from './Reveal'
-import { Lock, Landmark, BadgeCheck, Eye } from 'lucide-react'
+import { BadgeCheck, Fingerprint, Landmark, Lock } from 'lucide-react'
+import { Container } from './primitives'
 
 const pillars = [
   {
     icon: Landmark,
-    title: 'CBN regulated',
+    title: 'CBN licensed',
     description: 'Operating under Central Bank of Nigeria licensing and oversight.',
   },
   {
@@ -15,48 +15,40 @@ const pillars = [
   },
   {
     icon: Lock,
-    title: '256-bit encryption',
-    description: 'Your data is protected in transit and at rest, on every request.',
+    title: 'Always encrypted',
+    description: 'Your data is encrypted on every request, in transit and at rest.',
   },
   {
-    icon: Eye,
-    title: 'Verified accounts',
-    description: 'BVN and identity checks on every account before it can move money.',
+    icon: Fingerprint,
+    title: 'Verified with BVN',
+    description: 'Every account passes a BVN and identity check before it can move money.',
   },
 ]
 
 export function LandingSecurity() {
   return (
-    <section id="security" className="relative overflow-hidden bg-primary-deep">
-      <div className="relative mx-auto w-full max-w-[1180px] px-5 py-20 sm:px-8 lg:py-28">
-        <Reveal className="max-w-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
-            Security
-          </p>
-          <h2 className="mt-4 text-balance text-[2rem] font-bold leading-[1.08] tracking-[-0.015em] text-white sm:text-[2.6rem]">
-            Regulated, insured, and built to stay that way
-          </h2>
-          <p className="mt-4 max-w-lg text-pretty text-[16px] leading-[1.6] text-white/60">
-            PayXpress runs on the same standards required of licensed financial institutions in
-            Nigeria.
-          </p>
-        </Reveal>
+    <section id="security" className="scroll-mt-14 py-24 sm:py-32">
+      <Container>
+        <h2 className="type-title-1 max-w-[15ch] text-foreground">
+          Licensed by the CBN. Insured by the NDIC.
+        </h2>
+        <p className="type-lead mt-5 max-w-[34rem] text-muted-foreground">
+          PayXpress meets the same standards Nigeria sets for every licensed financial
+          institution.
+        </p>
 
-        {/* Divided row — thin rules, no card stack */}
-        <div className="mt-16 grid gap-px overflow-hidden bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
-          {pillars.map(({ icon: Icon, title, description }, i) => (
-            <Reveal key={title} delay={i * 0.08}>
-              <div className="h-full bg-primary-deep px-0 pb-2 sm:px-7 sm:pt-1">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.07] ring-1 ring-inset ring-white/12">
-                  <Icon size={18} strokeWidth={2} className="text-white" />
-                </span>
-                <h3 className="mt-5 text-[15.5px] font-bold tracking-tight text-white">{title}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-white/55">{description}</p>
-              </div>
-            </Reveal>
+        <div className="mt-14 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+          {pillars.map(({ icon: Icon, title, description }) => (
+            <div key={title} className="border-t border-border pt-6">
+              <Icon size={22} strokeWidth={1.75} className="text-primary" />
+              <h3 className="mt-4 text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+                {title}
+              </h3>
+              <p className="mt-2 text-[15px] leading-[1.5] text-muted-foreground">{description}</p>
+            </div>
           ))}
         </div>
-      </div>
+      </Container>
     </section>
   )
 }

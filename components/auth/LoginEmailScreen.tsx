@@ -49,7 +49,7 @@ export function LoginEmailScreen() {
             Welcome back
           </h1>
           <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
-            Enter your email address and we&apos;ll send you a one-time code — no password to
+            Enter your email address and we&apos;ll send you a verification code. No password to
             remember.
           </p>
         </motion.div>
@@ -76,7 +76,7 @@ export function LoginEmailScreen() {
                 if (error) setError('')
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-              className="h-13 w-full rounded-xl border border-card-border bg-white pl-11 pr-4 text-base font-medium text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+              className="h-13 w-full rounded-xl border border-card-border bg-card pl-11 pr-4 text-base font-medium text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
             />
           </div>
         </motion.div>

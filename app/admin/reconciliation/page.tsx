@@ -85,8 +85,8 @@ export default function ReconciliationPage() {
   return (
     <div className="flex flex-col gap-4">
       <p className="animate-fade-up text-sm text-muted-foreground">
-        These payments carry a NEEDS_RECONCILIATION status — the Paystack charge and biller
-        fulfilment disagree. Re-verifying safely re-runs the confirmation flow — it is a no-op if
+        These payments carry a NEEDS_RECONCILIATION status: the Paystack charge and biller
+        fulfilment disagree. Re-verifying safely reruns the confirmation flow and does nothing if
         the webhook already settled it.
       </p>
 

@@ -39,7 +39,7 @@ export function LoginScreen() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl p-6 border border-card-border shadow-sm relative">
+        <div className="bg-card rounded-2xl p-6 border border-card-border shadow-sm relative">
           {/* Passcode Input */}
           <div className="mb-6">
             <p className="text-xs text-muted-foreground mb-4 font-medium">Enter 6-Dot Passcode</p>
