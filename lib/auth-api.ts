@@ -1,4 +1,4 @@
-const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '')
+const API_BASE_URL: string = (process.env.NEXT_PUBLIC_API_BASE_URL || 'https://xpresspay-backend.onrender.com').replace(/\/+$/, '')
 
 async function authFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
