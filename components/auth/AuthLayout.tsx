@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Logo } from '@/components/ui/Logo'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { ArrowLeft, ShieldCheck, Zap, ReceiptText, CreditCard } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
@@ -20,12 +21,12 @@ const highlights = [
   {
     icon: Zap,
     title: 'Instant transfers',
-    desc: 'Money lands in seconds — any Nigerian bank, any time of day.',
+    desc: 'Money lands in seconds at any Nigerian bank, any time of day.',
   },
   {
     icon: ReceiptText,
     title: 'Every bill, one app',
-    desc: 'Airtime, data, electricity, TV — paid in two taps, receipted every time.',
+    desc: 'Airtime, data, electricity and TV, paid in two taps with a receipt every time.',
   },
   {
     icon: CreditCard,
@@ -38,8 +39,7 @@ const ROTATE_MS = 4200
 
 /**
  * Split-screen shell for every auth screen.
- * Left: the brand green panel — breathing gradient orbs, orbital rings, and a
- * self-rotating highlight card. Right: a clean white form column with an
+ * Left: the brand green panel with a self-rotating highlight card. Right: a clean white form column with an
  * animated step rail for multi-step flows.
  * All looping motion is disabled under prefers-reduced-motion.
  */
@@ -57,37 +57,9 @@ export function AuthLayout({ children, onBack, eyebrow, step, totalSteps }: Auth
   const hasSteps = Boolean(step && totalSteps)
 
   return (
-    <div className="min-h-screen flex bg-white">
+    <div className="min-h-screen flex bg-card">
       {/* ── Brand panel (desktop) ─────────────────────────────── */}
       <aside className="relative hidden lg:flex lg:w-[46%] xl:w-[50%] splash-gradient flex-col justify-between p-10 xl:p-14 overflow-hidden">
-        {/* Orbital rings */}
-        <div
-          aria-hidden
-          className="absolute -right-24 -top-24 w-96 h-96 rounded-full border border-white/10"
-        />
-        <div
-          aria-hidden
-          className="absolute -right-10 top-16 w-72 h-72 rounded-full border border-white/10"
-        />
-
-        {/* Breathing orbs — pure ambience, killed under reduced motion */}
-        {!reduce && (
-          <>
-            <motion.div
-              aria-hidden
-              className="absolute -left-24 bottom-20 h-80 w-80 rounded-full bg-white/[0.06] blur-3xl"
-              animate={{ y: [0, -26, 0], scale: [1, 1.08, 1] }}
-              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-              aria-hidden
-              className="absolute right-8 top-1/3 h-60 w-60 rounded-full bg-accent/20 blur-3xl"
-              animate={{ y: [0, 20, 0], scale: [1, 1.12, 1] }}
-              transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }}
-            />
-          </>
-        )}
-
         <motion.div
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -105,9 +77,7 @@ export function AuthLayout({ children, onBack, eyebrow, step, totalSteps }: Auth
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
             className="text-white font-bold text-4xl xl:text-5xl leading-[1.05] tracking-tight text-balance"
           >
-            Pay Anywhere.
-            <br />
-            Anytime.
+            Pay any bank, any bill, any time.
           </motion.h2>
 
           {/* Self-rotating highlight card */}
@@ -126,7 +96,7 @@ export function AuthLayout({ children, onBack, eyebrow, step, totalSteps }: Auth
                 </span>
                 <div>
                   <p className="text-[15px] font-semibold text-white">{highlights[active].title}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-white/65">
+                  <p className="mt-1 text-sm leading-relaxed text-white/80">
                     {highlights[active].desc}
                   </p>
                 </div>
@@ -155,14 +125,14 @@ export function AuthLayout({ children, onBack, eyebrow, step, totalSteps }: Auth
           </div>
         </div>
 
-        <p className="relative z-10 flex items-center gap-1.5 text-xs text-white/55">
+        <p className="relative z-10 flex items-center gap-1.5 text-xs text-white/80">
           <ShieldCheck size={14} />
           Licensed by the CBN. Deposits insured by the NDIC.
         </p>
       </aside>
 
       {/* ── Form column ───────────────────────────────────────── */}
-      <div className="flex min-h-screen flex-1 flex-col bg-white">
+      <div className="flex min-h-screen flex-1 flex-col bg-card">
         <div className="flex h-16 flex-shrink-0 items-center justify-between px-5 sm:px-8">
           {onBack ? (
             <motion.button
@@ -178,10 +148,13 @@ export function AuthLayout({ children, onBack, eyebrow, step, totalSteps }: Auth
             <span />
           )}
 
-          {/* Brand shown on mobile where the panel is hidden */}
-          <div className="flex items-center gap-2 lg:invisible">
-            <Logo size="sm" variant="brand" />
-            <span className="text-base font-bold tracking-tight text-foreground">PayXpress</span>
+          <div className="flex items-center gap-3">
+            {/* Brand shown on mobile where the panel is hidden */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <Logo size="sm" variant="brand" />
+              <span className="text-base font-bold tracking-tight text-foreground">PayXpress</span>
+            </div>
+            <ThemeToggle />
           </div>
         </div>
 

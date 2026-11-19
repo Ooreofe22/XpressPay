@@ -23,6 +23,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { Status } from '@/components/ui/Status'
 
 interface KYCField {
   id: string
@@ -126,7 +127,7 @@ function AccountLimitsScreen({ onBack }: { onBack: () => void }) {
                     {verified ? (
                         <CheckCircle2 size={20} className="text-primary flex-shrink-0" />
                     ) : (
-                        <Clock size={20} className="text-accent flex-shrink-0" />
+                        <Clock size={20} className="text-warning flex-shrink-0" />
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{field.label}</p>
@@ -136,9 +137,7 @@ function AccountLimitsScreen({ onBack }: { onBack: () => void }) {
                     </div>
                   </div>
                   {verified ? (
-                      <span className="text-xs bg-primary-tint text-primary px-2 py-1 rounded-full font-medium">
-                  Verified
-                </span>
+                      <Status tone="positive" dot>Verified</Status>
                   ) : (
                       <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
                   )}
@@ -266,10 +265,9 @@ export function ProfileScreen() {
                 </button>
               </div>
 
-              <span className="relative inline-flex items-center gap-1.5 text-xs bg-white/20 backdrop-blur-sm border border-white/20 text-white px-2.5 py-1 rounded-full font-semibold">
-              <Medal size={13} strokeWidth={2.25} />
+              <Status tone="onBrand" icon={<Medal strokeWidth={2.25} />} className="relative">
               Tier 1
-            </span>
+            </Status>
 
               <div className="relative mt-6 pt-5 border-t border-white/15">
                 <div className="flex items-center justify-between mb-1">

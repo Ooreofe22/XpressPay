@@ -34,17 +34,6 @@ export function Logo({ size = 'md', showOrbital = false, animated = false, varia
               animationDuration: animated ? '10s' : undefined,
             }}
           >
-            {/* Orange orbit dot */}
-            <div
-              className="absolute rounded-full bg-accent"
-              style={{
-                width: `${dimension * 0.12}px`,
-                height: `${dimension * 0.12}px`,
-                top: `${dimension * 0.02}px`,
-                left: '50%',
-                transform: 'translateX(-50%)',
-              }}
-            />
           </div>
           <div
             className={`absolute rounded-full border ${isInverse ? 'border-white/15' : 'border-primary/15'} ${animated ? 'animate-spin' : ''}`}
@@ -73,16 +62,6 @@ export function Logo({ size = 'md', showOrbital = false, animated = false, varia
           size={iconSize}
           className={isInverse ? 'text-primary' : 'text-white'}
           strokeWidth={2.75}
-        />
-        {/* Orange accent dot */}
-        <div
-          className="absolute rounded-full bg-accent"
-          style={{
-            width: `${dimension * 0.16}px`,
-            height: `${dimension * 0.16}px`,
-            bottom: `${dimension * 0.18}px`,
-            right: `${dimension * 0.18}px`,
-          }}
         />
       </div>
     </div>

@@ -59,7 +59,7 @@ export default function BillersPage() {
       await syncBillers()
       const fresh = await listBillers()
       setBillers(fresh)
-      setSyncedMsg(`Catalog synced — ${fresh.length} billers`)
+      setSyncedMsg(`Catalog synced: ${fresh.length} billers`)
       setTimeout(() => setSyncedMsg(null), 4000)
     } catch (e) {
       setError(e instanceof AdminApiError ? e.message : 'Sync failed')
@@ -177,7 +177,7 @@ export default function BillersPage() {
       ))}
 
       {groups.length === 0 && (
-        <p className="text-sm text-muted-foreground">No billers synced yet — run a catalog sync.</p>
+        <p className="text-sm text-muted-foreground">No billers synced yet. Run a catalog sync.</p>
       )}
     </div>
   )

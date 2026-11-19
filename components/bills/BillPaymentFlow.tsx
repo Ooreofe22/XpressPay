@@ -133,7 +133,7 @@ export function BillPaymentFlow({
     setStep('processing')
     try {
       const accessToken = localStorage.getItem('payxpress_access_token')
-      if (!accessToken) throw new Error('Session expired — please log in again')
+      if (!accessToken) throw new Error('Session expired. Please log in again.')
 
       const result = await payBillFromWallet(accessToken, {
         uniqueCode: biller.uniqueCode,
@@ -561,7 +561,7 @@ export function BillPaymentFlow({
                 </div>
                 <p className="text-base font-bold text-foreground mb-1">Redirecting to the gateway…</p>
                 <p className="text-sm text-muted-foreground max-w-[240px]">
-                  Complete your payment there — you&apos;ll be brought back here automatically
+                  Complete your payment there and you&apos;ll come back here automatically.
                 </p>
               </div>
           )}

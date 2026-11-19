@@ -3,6 +3,7 @@
 import React from 'react'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
+import { Status } from '@/components/ui/Status'
 
 const titles: { prefix: string; title: string; sub: string }[] = [
   { prefix: '/admin/transactions', title: 'Transactions', sub: 'Every payment across all billers' },
@@ -36,9 +37,9 @@ export function AdminTopbar({ onMenu }: { onMenu: () => void }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="hidden rounded-full bg-accent-tint px-2.5 py-1 text-[11px] font-bold text-accent sm:inline-flex">
+          <Status tone="warning" dot className="hidden sm:inline-flex">
             Test mode
-          </span>
+          </Status>
           <span className="balance-gradient flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white elevation-1">
             OP
           </span>

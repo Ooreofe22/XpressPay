@@ -39,7 +39,7 @@ export function SignUpBVN() {
             Confirm your BVN
           </h1>
           <p className="text-muted-foreground text-sm leading-relaxed text-pretty">
-            One last step — we format-check your BVN to finish setting up your account.
+            One last step: we check your BVN format to finish setting up your account.
           </p>
         </div>
 

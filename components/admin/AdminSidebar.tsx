@@ -12,6 +12,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { Status } from '@/components/ui/Status'
 
 const navItems = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -38,12 +39,11 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
         <Link href="/admin" className="flex items-center gap-2.5" aria-label="PayXpress admin home">
           <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-white/12 ring-1 ring-white/20">
             <ArrowUpRight size={18} className="text-white" strokeWidth={2.75} />
-            <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full bg-accent ring-2 ring-primary-deep" />
           </span>
           <span className="text-[17px] font-bold tracking-tight">PayXpress</span>
-          <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-accent uppercase">
+          <Status tone="onBrand" size="sm" className="border-l border-white/25 pl-2.5">
             Admin
-          </span>
+          </Status>
         </Link>
         <button
           onClick={onClose}

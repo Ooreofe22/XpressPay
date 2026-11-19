@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Eye,
 } from 'lucide-react'
+import { Status } from '@/components/ui/Status'
 
 interface MenuItem {
   id: string
@@ -126,9 +127,7 @@ export function MoreScreen() {
               </div>
               <div className="flex items-center gap-2">
                 {item.badge && (
-                  <span className="text-xs font-semibold px-2 py-1 bg-primary/20 text-primary rounded-full">
-                    {item.badge}
-                  </span>
+                  <Status tone="positive" dot>{item.badge}</Status>
                 )}
                 <ChevronRight size={18} className="text-muted-foreground" />
               </div>

@@ -23,6 +23,7 @@ import { fetchAllBillers } from '@/lib/api'
 import { BillPaymentFlow } from '@/components/bills/BillPaymentFlow'
 import { useApp } from '@/context/AppContext'
 import { formatCurrency } from '@/lib/utils'
+import { Status } from '@/components/ui/Status'
 
 const CATEGORY_META: Record<
     string,
@@ -229,9 +230,7 @@ const BeneficiariesCard: React.FC<{
           </span>
             <p className="text-sm font-bold text-foreground">Beneficiaries</p>
           </div>
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
-          {beneficiaries.length}
-        </span>
+          <Status size="sm">{beneficiaries.length}</Status>
         </header>
         <div className="p-1.5">
           {beneficiaries.map((b) => {
@@ -382,7 +381,7 @@ export function BillsScreen() {
                   />
                   <input
                       type="text"
-                      placeholder="Search billers — MTN, DStv, Ikeja…"
+                      placeholder="Search billers like MTN, DStv or Ikeja"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="h-12 w-full rounded-xl border border-card-border bg-card pl-11 pr-4 text-sm text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"

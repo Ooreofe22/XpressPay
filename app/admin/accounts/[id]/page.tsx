@@ -14,6 +14,7 @@ import type { AdminAccount, AdminTransaction } from '@/types/admin'
 import { formatDateTime, formatNaira } from '@/lib/format'
 import { StatusBadge } from '@/components/admin/StatusBadge'
 import Link from 'next/link'
+import { Status } from '@/components/ui/Status'
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -112,9 +113,9 @@ export default function AccountDetailPage() {
             <p className="mt-1 text-xs text-muted-foreground">Created {formatDateTime(account.createdAt)}</p>
           </div>
           {account.flagged && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-accent-tint px-2.5 py-1 text-xs font-bold text-accent">
-              <AlertTriangle size={13} /> Flagged — over ₦20,000 transaction
-            </span>
+            <Status tone="warning" icon={<AlertTriangle />}>
+              Flagged: transaction over ₦20,000
+            </Status>
           )}
         </div>
 

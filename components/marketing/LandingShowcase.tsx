@@ -1,109 +1,70 @@
 import React from 'react'
-import { Reveal } from './Reveal'
+import { Container } from './primitives'
 import { BillsMockup, CardMockup, InsightsMockup } from './ProductMockups'
+
+function Panel({
+  title,
+  body,
+  children,
+  className = '',
+}: {
+  title: string
+  body: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={`flex flex-col justify-between gap-10 rounded-[28px] bg-background p-7 sm:p-10 ${className}`}
+    >
+      <div className="max-w-[26rem]">
+        <h3 className="type-title-2 text-foreground">{title}</h3>
+        <p className="type-body mt-3 text-muted-foreground">{body}</p>
+      </div>
+      {children}
+    </div>
+  )
+}
 
 export function LandingShowcase() {
   return (
-    <section id="product" className="border-t border-border bg-white">
-      <div className="mx-auto w-full max-w-[1180px] px-5 py-20 sm:px-8 lg:py-28">
-        {/* Section intro — left-aligned, not centred, so the page has an axis */}
-        <Reveal className="max-w-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
-            The product
-          </p>
-          <h2 className="mt-4 text-balance text-[2rem] font-bold leading-[1.08] tracking-[-0.015em] text-foreground sm:text-[2.6rem]">
-            Every naira you move, in one place
-          </h2>
-          <p className="mt-4 max-w-lg text-pretty text-[16px] leading-[1.6] text-muted-foreground">
-            No switching between apps to settle a bill, top up a line, or check what you spent.
-          </p>
-        </Reveal>
+    <section id="product" className="scroll-mt-14 bg-card py-24 sm:py-32">
+      <Container>
+        <h2 className="type-title-1 max-w-[16ch] text-foreground">
+          Bills, cards and spending, all from one balance.
+        </h2>
+        <p className="type-lead mt-5 max-w-[34rem] text-muted-foreground">
+          No second app to top up a line, pay for light or check what went where.
+        </p>
 
-        {/* Row 1 — asymmetric 7/5 */}
-        <div className="mt-14 grid gap-6 lg:grid-cols-12">
-          <Reveal className="lg:col-span-7">
-            <div className="flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-background p-7 sm:p-9">
-              <div className="max-w-sm">
-                <h3 className="text-[1.375rem] font-bold leading-snug tracking-tight text-foreground">
-                  Bills that pay themselves
-                </h3>
-                <p className="mt-3 text-[14.5px] leading-relaxed text-muted-foreground">
-                  Electricity, TV, internet and data — schedule each one once and PayXpress handles
-                  the rest, with a receipt every time.
-                </p>
-              </div>
-              <div className="mt-9">
-                <BillsMockup />
-              </div>
-            </div>
-          </Reveal>
+        <div className="mt-14 grid gap-5 lg:grid-cols-12">
+          <Panel
+            className="lg:col-span-7"
+            title="Bills that pay on schedule"
+            body="Electricity, TV, internet and data. Set each one up once and get a receipt every time it runs."
+          >
+            <BillsMockup />
+          </Panel>
 
-          <Reveal delay={0.1} className="lg:col-span-5">
-            <div className="flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-primary-deep p-7 sm:p-9">
-              <div>
-                <h3 className="text-[1.375rem] font-bold leading-snug tracking-tight text-white">
-                  Cards you control
-                </h3>
-                <p className="mt-3 text-[14.5px] leading-relaxed text-white/65">
-                  Create a virtual card in seconds. Freeze it, set a limit, or delete it — instantly.
-                </p>
-              </div>
-              <div className="mt-9">
-                <CardMockup />
-              </div>
+          <Panel
+            className="lg:col-span-5"
+            title="A card in seconds"
+            body="Create a virtual card for online spending. Freeze it or set a limit from the app."
+          >
+            <CardMockup />
+          </Panel>
+
+          <Panel
+            className="lg:col-span-12 lg:flex-row lg:items-center"
+            title="See where every naira went"
+            body="Spending grouped by category each month, with statements you can export when you need them."
+          >
+            <div className="w-full lg:max-w-[420px]">
+              <InsightsMockup />
             </div>
-          </Reveal>
+          </Panel>
         </div>
-
-        {/* Row 2 — mirrored 5/7 */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-12">
-          <Reveal className="lg:col-span-5">
-            <div className="flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-background p-7 sm:p-9">
-              <div>
-                <h3 className="text-[1.375rem] font-bold leading-snug tracking-tight text-foreground">
-                  Know where it went
-                </h3>
-                <p className="mt-3 text-[14.5px] leading-relaxed text-muted-foreground">
-                  Clean categories and monthly totals, with statements you can export whenever you
-                  need them.
-                </p>
-              </div>
-              <div className="mt-9">
-                <InsightsMockup />
-              </div>
-            </div>
-          </Reveal>
-
-          <Reveal delay={0.1} className="lg:col-span-7">
-            <div className="flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-background p-7 sm:p-9">
-              <div className="max-w-sm">
-                <h3 className="text-[1.375rem] font-bold leading-snug tracking-tight text-foreground">
-                  Transfers that land in seconds
-                </h3>
-                <p className="mt-3 text-[14.5px] leading-relaxed text-muted-foreground">
-                  Any Nigerian bank, any time of day. Save a beneficiary once and repeat the payment
-                  in two taps.
-                </p>
-              </div>
-
-              {/* Bank rail — plain type, no logo claims */}
-              <div className="mt-9 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
-                {['GTBank', 'Zenith', 'Opay', 'Kuda'].map((bank) => (
-                  <div
-                    key={bank}
-                    className="flex h-16 items-center justify-center bg-white text-[12.5px] font-semibold text-muted-foreground"
-                  >
-                    {bank}
-                  </div>
-                ))}
-              </div>
-              <p className="mt-3 text-[11px] text-muted-foreground">
-                Plus every other bank and wallet on the NIBSS network.
-              </p>
-            </div>
-          </Reveal>
-        </div>
-      </div>
+      </Container>
     </section>
   )
 }

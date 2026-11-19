@@ -6,11 +6,12 @@ import { AlertTriangle, Search } from 'lucide-react'
 import { listAccounts, AdminApiError } from '@/lib/admin-api'
 import type { AdminAccount } from '@/types/admin'
 import { formatNaira, formatDateTime } from '@/lib/format'
+import { Status } from '@/components/ui/Status'
 
-const statusStyle: Record<AdminAccount['status'], string> = {
-  ACTIVE: 'bg-primary-tint text-primary',
-  SUSPENDED: 'bg-destructive/10 text-destructive',
-  PENDING_VERIFICATION: 'bg-secondary text-muted-foreground',
+const statusMeta: Record<AdminAccount['status'], { label: string; tone: 'positive' | 'danger' | 'neutral' }> = {
+  ACTIVE: { label: 'Active', tone: 'positive' },
+  SUSPENDED: { label: 'Suspended', tone: 'danger' },
+  PENDING_VERIFICATION: { label: 'Pending verification', tone: 'neutral' },
 }
 
 export default function AccountsPage() {
@@ -68,16 +69,16 @@ export default function AccountsPage() {
                       {a.email}
                     </Link>
                     {a.flagged && (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-accent-tint px-2 py-0.5 text-[11px] font-bold text-accent">
-                        <AlertTriangle size={11} /> Flagged
-                      </span>
+                      <Status tone="warning" size="sm" icon={<AlertTriangle />} className="ml-2">
+                        Flagged
+                      </Status>
                     )}
                   </td>
                   <td className="px-4 py-3 tabular-nums text-foreground">{formatNaira(a.balance)}</td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle[a.status]}`}>
-                      {a.status}
-                    </span>
+                    <Status tone={statusMeta[a.status].tone} dot>
+                      {statusMeta[a.status].label}
+                    </Status>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{formatDateTime(a.createdAt)}</td>
                   <td className="px-4 py-3 text-right">

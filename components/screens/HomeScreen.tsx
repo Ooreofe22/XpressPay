@@ -146,7 +146,7 @@ export function HomeScreen() {
                                         setCopiedAccount(true)
                                         setTimeout(() => setCopiedAccount(false), 1500)
                                     }}
-                                    className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 transition-colors rounded-full px-3 py-1.5"
+                                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-2.5 ring-1 ring-inset ring-white/20 transition-colors hover:bg-white/25 active:scale-[0.97]"
                                 >
                                     <span className="text-xs text-white/80">Acct No</span>
                                     <span className="text-xs font-mono font-semibold text-white">

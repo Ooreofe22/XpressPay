@@ -62,7 +62,7 @@ export function SignUpEmailScreen() {
             Let&apos;s get you started
           </h1>
           <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
-            Enter your email and BVN — we&apos;ll send a verification code to confirm it&apos;s
+            Enter your email and BVN and we&apos;ll send a verification code to confirm it&apos;s
             you.
           </p>
         </motion.div>
@@ -89,7 +89,7 @@ export function SignUpEmailScreen() {
                 if (error) setError('')
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-              className="h-13 w-full rounded-xl border border-card-border bg-white pl-11 pr-4 text-base font-medium text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+              className="h-13 w-full rounded-xl border border-card-border bg-card pl-11 pr-4 text-base font-medium text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
             />
           </div>
           <p className="text-xs text-muted-foreground">Your code and receipts will be sent here</p>
@@ -126,7 +126,7 @@ export function SignUpEmailScreen() {
                 if (error) setError('')
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-              className={`h-13 w-full rounded-xl border bg-white pl-11 pr-12 font-mono text-base font-semibold tracking-[0.18em] text-foreground transition-all duration-200 placeholder:font-sans placeholder:font-medium placeholder:tracking-normal placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 ${
+              className={`h-13 w-full rounded-xl border bg-card pl-11 pr-12 font-mono text-base font-semibold tracking-[0.18em] text-foreground transition-all duration-200 placeholder:font-sans placeholder:font-medium placeholder:tracking-normal placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 ${
                 isValidBvn
                   ? 'border-primary focus:border-primary focus:ring-primary/10'
                   : 'border-card-border focus:border-primary focus:ring-primary/10'
@@ -159,7 +159,7 @@ export function SignUpEmailScreen() {
         >
           <ShieldCheck size={17} className="mt-0.5 flex-shrink-0 text-primary" />
           <p className="text-xs leading-relaxed text-muted-foreground">
-            We use one-time codes instead of passwords — your account stays secure even if someone
+            We use verification codes instead of passwords, so your account stays secure even if someone
             knows your email. Your BVN identifies you; we never share it with third parties.
           </p>
         </motion.div>

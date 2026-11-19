@@ -90,7 +90,7 @@ export const OtpInput = forwardRef<OtpInputHandle, OtpInputProps>(function OtpIn
           onPaste={handlePaste}
           aria-label={`Digit ${index + 1}`}
           className={`h-14 w-12 rounded-xl border-2 text-center text-2xl font-bold text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-60 ${
-            value[index] ? 'border-primary bg-primary-tint' : 'border-card-border bg-white'
+            value[index] ? 'border-primary bg-primary-tint' : 'border-card-border bg-card'
           }`}
         />
       ))}

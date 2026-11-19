@@ -58,7 +58,7 @@ export default function TransactionsPage() {
 
   async function handleRequery(tx: AdminTransaction) {
     if (!tx.paystackReference) {
-      setRequeryError('No Paystack reference on this transaction — it may have been paid from wallet balance.')
+      setRequeryError('No Paystack reference on this transaction. It may have been paid from wallet balance.')
       return
     }
     setRequerying(true)
@@ -259,8 +259,8 @@ export default function TransactionsPage() {
               </dl>
 
               {requeryError && (
-                <div className="mt-5 rounded-xl border border-accent/25 bg-accent-tint p-4">
-                  <p className="text-xs font-bold text-accent uppercase tracking-wide">Re-verify failed</p>
+                <div className="mt-5 rounded-xl border border-warning/25 bg-warning-tint p-4">
+                  <p className="text-xs font-bold text-warning uppercase tracking-wide">Re-verify failed</p>
                   <p className="mt-1.5 text-sm text-foreground">{requeryError}</p>
                 </div>
               )}

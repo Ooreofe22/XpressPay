@@ -85,8 +85,8 @@ export default function ReconciliationPage() {
   return (
     <div className="flex flex-col gap-4">
       <p className="animate-fade-up text-sm text-muted-foreground">
-        These payments carry a NEEDS_RECONCILIATION status — the Paystack charge and biller
-        fulfilment disagree. Re-verifying safely re-runs the confirmation flow — it is a no-op if
+        These payments carry a NEEDS_RECONCILIATION status: the Paystack charge and biller
+        fulfilment disagree. Re-verifying safely reruns the confirmation flow and does nothing if
         the webhook already settled it.
       </p>
 
@@ -98,7 +98,7 @@ export default function ReconciliationPage() {
             key={tx.id}
             style={{ animationDelay: `${i * 70}ms` }}
             className={`animate-fade-up rounded-2xl border bg-card p-5 elevation-1 transition-all duration-500 ${
-              doneStatus ? 'translate-x-3 border-primary/40 opacity-0' : 'border-l-4 border-card-border border-l-accent'
+              doneStatus ? 'translate-x-3 border-primary/40 opacity-0' : 'border-l-4 border-card-border border-l-warning'
             }`}
           >
             <div className="flex flex-wrap items-start justify-between gap-4">

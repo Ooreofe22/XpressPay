@@ -14,6 +14,7 @@ import {
   Lock,
   ChevronRight,
 } from 'lucide-react'
+import { Status } from '@/components/ui/Status'
 
 /** Realistic bank card visual */
 function BankCard({
@@ -70,9 +71,9 @@ function BankCard({
       </div>
 
       {badge && (
-        <span className="absolute top-5 right-14 bg-accent text-accent-foreground px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+        <Status tone="onBrand" size="sm" className="absolute top-5 right-14">
           {badge}
-        </span>
+        </Status>
       )}
     </div>
   )

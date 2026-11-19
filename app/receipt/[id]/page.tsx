@@ -65,7 +65,7 @@ export default function ReceiptPage() {
       ? { icon: Check, label: 'Successful', bg: 'bg-primary', text: 'text-primary' }
       : isFailed
           ? { icon: X, label: 'Failed', bg: 'bg-destructive', text: 'text-destructive' }
-          : { icon: Clock, label: 'Pending', bg: 'bg-accent', text: 'text-accent' }
+          : { icon: Clock, label: 'Pending', bg: 'bg-warning', text: 'text-warning' }
 
   const handleCopyRef = () => {
     navigator.clipboard.writeText(transaction.reference)
