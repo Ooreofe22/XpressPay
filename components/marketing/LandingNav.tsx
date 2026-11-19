@@ -61,7 +61,7 @@ export function LandingNav() {
           <ThemeToggle />
           <Link
             href="/app?screen=login-email"
-            className="rounded-full px-3.5 py-2 text-[14px] font-medium text-foreground transition-colors hover:bg-secondary"
+            className="rounded-lg px-3.5 py-2 text-[14px] font-medium text-foreground transition-colors hover:bg-secondary"
           >
             Log in
           </Link>

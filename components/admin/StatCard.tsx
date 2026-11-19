@@ -47,7 +47,7 @@ export function StatCard({
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         <span
           className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-            tone === 'alert' ? 'bg-accent-tint text-accent' : 'bg-primary-tint text-primary'
+            tone === 'alert' ? 'bg-warning-tint text-warning' : 'bg-primary-tint text-primary'
           }`}
         >
           <Icon size={17} strokeWidth={2.25} />

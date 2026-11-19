@@ -57,13 +57,13 @@ function PendingIndicator({ size }: { size: number }) {
 type CtaSize = 'sm' | 'md' | 'lg'
 
 const sizes: Record<CtaSize, string> = {
-  sm: 'h-9 px-4 text-[14px] gap-1.5',
-  md: 'h-12 px-6 text-[16px] gap-2',
-  lg: 'h-14 px-8 text-[17px] gap-2.5',
+  sm: 'h-9 px-4 text-[14px] gap-1.5 rounded-[10px]',
+  md: 'h-12 px-6 text-[16px] gap-2 rounded-xl',
+  lg: 'h-14 px-8 text-[17px] gap-2.5 rounded-[14px]',
 }
 
 /**
- * The one filled button on the page. Accent background, pill shape, and a
+ * The one filled button on the page. Accent background, squared corners, and a
  * loading state so a slow navigation never looks like a dead click.
  */
 export function CtaLink({
@@ -84,7 +84,7 @@ export function CtaLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`group inline-flex items-center justify-center rounded-full bg-primary font-semibold tracking-[-0.01em] text-primary-foreground transition-[background-color,transform,box-shadow] duration-200 hover:bg-primary-dark active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/30 ${sizes[size]} ${className}`}
+      className={`group inline-flex items-center justify-center bg-primary font-semibold tracking-[-0.01em] text-primary-foreground transition-[background-color,transform,box-shadow] duration-200 hover:bg-primary-dark active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/30 ${sizes[size]} ${className}`}
     >
       {children}
       <PendingIndicator size={icon} />

@@ -59,9 +59,9 @@ export default function AdminDashboardPage() {
       {stats.reconciliationCount > 0 && (
         <Link
           href="/admin/reconciliation"
-          className="animate-fade-up group flex items-center gap-3 rounded-2xl border border-accent/25 bg-accent-tint px-4 py-3.5 transition-all duration-200 hover:border-accent/50 elevation-1"
+          className="animate-fade-up group flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning-tint px-4 py-3.5 transition-all duration-200 hover:border-warning/50 elevation-1"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning-tint text-warning">
             <AlertTriangle size={17} strokeWidth={2.25} />
           </span>
           <div className="min-w-0 flex-1">
@@ -75,7 +75,7 @@ export default function AdminDashboardPage() {
           </div>
           <ArrowRight
             size={17}
-            className="shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
+            className="shrink-0 text-warning transition-transform duration-200 group-hover:translate-x-1"
           />
         </Link>
       )}
@@ -180,7 +180,7 @@ export default function AdminDashboardPage() {
           className="animate-fade-up group flex items-center gap-4 rounded-2xl border border-card-border bg-card p-5 elevation-1 transition-all duration-200 hover:elevation-2"
           style={{ animationDelay: '440ms' }}
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-warning-tint text-warning">
             <CheckCircle2 size={19} strokeWidth={2.25} />
           </span>
           <div className="flex-1">
@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
           </div>
           <ArrowRight
             size={17}
-            className="text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-accent"
+            className="text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-warning"
           />
         </Link>
       </div>

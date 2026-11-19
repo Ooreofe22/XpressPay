@@ -44,6 +44,8 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-destructive-tint: var(--destructive-tint);
   --color-debit: var(--debit);
   --color-credit: var(--credit);
 
@@ -93,7 +95,9 @@
 
   --destructive: #d70015;
   --success: #0b6e4f;
-  --warning: #b25000;
+  --warning: #a34a00;
+  --warning-tint: #fff1e0;
+  --destructive-tint: #ffebed;
   --debit: #d70015;
   --credit: #0b6e4f;
 
@@ -133,6 +137,8 @@
   --destructive: #ff5c5c;
   --success: #2ec48a;
   --warning: #ffb340;
+  --warning-tint: rgba(255, 179, 64, 0.14);
+  --destructive-tint: rgba(255, 92, 92, 0.14);
   --debit: #ff6b6b;
   --credit: #2ec48a;
 

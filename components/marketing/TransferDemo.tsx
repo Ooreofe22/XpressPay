@@ -214,25 +214,42 @@ export function TransferDemo() {
             <p className="mt-2 text-[2.75rem] font-bold leading-none tracking-[-0.03em] text-foreground tabular-nums sm:text-[3.25rem]">
               {naira(amount)}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {amounts.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => {
-                    setAmount(a)
-                    resetIfDone()
-                  }}
-                  aria-pressed={a === amount}
-                  className={`h-9 rounded-full px-4 text-[14px] font-medium tabular-nums transition-colors duration-200 disabled:cursor-not-allowed ${
-                    a === amount
-                      ? 'bg-foreground text-background'
-                      : 'bg-secondary text-foreground hover:bg-border'
-                  }`}
-                >
-                  {naira(a)}
-                </button>
-              ))}
+            {/* Segmented control: one track, a sliding thumb marks the choice */}
+            <div
+              role="radiogroup"
+              aria-label="Quick amounts"
+              className="mt-4 grid grid-cols-4 rounded-[12px] bg-secondary p-1"
+            >
+              {amounts.map((a) => {
+                const selected = a === amount
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => {
+                      setAmount(a)
+                      resetIfDone()
+                    }}
+                    className={`relative h-9 rounded-[9px] text-[13px] font-medium tabular-nums transition-colors duration-200 disabled:cursor-not-allowed sm:text-[14px] ${
+                      selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {selected && (
+                      <motion.span
+                        layoutId="amount-thumb"
+                        transition={
+                          reduce ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 38 }
+                        }
+                        className="absolute inset-0 rounded-[9px] bg-card elevation-1"
+                        aria-hidden
+                      />
+                    )}
+                    <span className="relative">{naira(a)}</span>
+                  </button>
+                )
+              })}
             </div>
           </fieldset>
 
@@ -244,7 +261,7 @@ export function TransferDemo() {
                   setPhase('idle')
                   setStep(-1)
                 }}
-                className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-secondary text-[17px] font-semibold text-foreground transition-colors hover:bg-border"
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] bg-secondary text-[17px] font-semibold text-foreground transition-colors hover:bg-border"
               >
                 Send another
               </button>
@@ -254,7 +271,7 @@ export function TransferDemo() {
                 onClick={send}
                 disabled={locked || insufficient}
                 aria-busy={locked}
-                className="relative flex h-14 w-full items-center justify-center gap-2.5 overflow-hidden rounded-full bg-primary text-[17px] font-semibold text-primary-foreground transition-[background-color,transform] duration-200 hover:bg-primary-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:hover:bg-primary [&:disabled:not([aria-busy=true])]:opacity-40"
+                className="relative flex h-14 w-full items-center justify-center gap-2.5 overflow-hidden rounded-[14px] bg-primary text-[17px] font-semibold text-primary-foreground transition-[background-color,transform] duration-200 hover:bg-primary-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:hover:bg-primary [&:disabled:not([aria-busy=true])]:opacity-40"
               >
                 {locked ? (
                   <>

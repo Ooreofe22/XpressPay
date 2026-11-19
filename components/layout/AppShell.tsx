@@ -247,7 +247,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="relative w-9 h-9 flex items-center justify-center rounded-lg text-foreground hover:bg-secondary transition-colors"
                 >
                   <Bell size={19} strokeWidth={1.9} />
-                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent ring-2 ring-card" />
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive ring-2 ring-card" />
                 </button>
                 <span className="md:hidden w-9 h-9 rounded-full balance-gradient flex items-center justify-center">
                 <span className="text-white font-semibold text-xs">{initials}</span>

@@ -23,6 +23,7 @@ import { fetchAllBillers } from '@/lib/api'
 import { BillPaymentFlow } from '@/components/bills/BillPaymentFlow'
 import { useApp } from '@/context/AppContext'
 import { formatCurrency } from '@/lib/utils'
+import { Status } from '@/components/ui/Status'
 
 const CATEGORY_META: Record<
     string,
@@ -229,9 +230,7 @@ const BeneficiariesCard: React.FC<{
           </span>
             <p className="text-sm font-bold text-foreground">Beneficiaries</p>
           </div>
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
-          {beneficiaries.length}
-        </span>
+          <Status size="sm">{beneficiaries.length}</Status>
         </header>
         <div className="p-1.5">
           {beneficiaries.map((b) => {

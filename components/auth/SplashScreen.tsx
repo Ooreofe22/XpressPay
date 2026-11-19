@@ -4,6 +4,7 @@ import React from 'react'
 import { useApp } from '@/context/AppContext'
 import { Logo } from '@/components/ui/Logo'
 import { ShieldCheck, Zap, ReceiptText, CreditCard } from 'lucide-react'
+import { Status } from '@/components/ui/Status'
 
 const features = [
   { icon: Zap, label: 'Instant transfers' },
@@ -16,18 +17,6 @@ export function SplashScreen() {
 
   return (
     <div className="min-h-screen splash-gradient relative overflow-hidden">
-      {/* Faint orbital accents */}
-      <div
-        aria-hidden
-        className="absolute -right-40 -top-40 w-[32rem] h-[32rem] rounded-full border border-white/10"
-      />
-      <div
-        aria-hidden
-        className="absolute -left-32 bottom-0 w-[28rem] h-[28rem] rounded-full border border-white/10"
-      />
-
-      
-
       {/* Hero */}
       <main className="relative max-w-6xl mx-auto px-6 sm:px-10 flex flex-col items-center text-center pt-10 sm:pt-16 pb-16">
         <div className="animate-fade-up flex flex-col items-center">
@@ -45,14 +34,12 @@ export function SplashScreen() {
           </p>
 
           {/* Feature chips */}
-          <ul className="flex flex-wrap items-center justify-center gap-2.5 mt-8">
+          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-8">
             {features.map(({ icon: Icon, label }) => (
-              <li
-                key={label}
-                className="flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-4 py-2 text-sm text-white/90 font-medium"
-              >
-                <Icon size={15} strokeWidth={2} />
-                {label}
+              <li key={label}>
+                <Status tone="onBrand" size="lg" icon={<Icon strokeWidth={2} />}>
+                  {label}
+                </Status>
               </li>
             ))}
           </ul>

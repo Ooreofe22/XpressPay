@@ -27,7 +27,7 @@ export function Header() {
             className="relative p-2.5 hover:bg-secondary rounded-full transition-colors"
           >
             <Bell size={19} className="text-foreground" strokeWidth={1.75} />
-            <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-accent ring-2 ring-card" />
+            <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-destructive ring-2 ring-card" />
           </button>
         </div>
       </div>
