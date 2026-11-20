@@ -89,6 +89,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex min-w-0 items-center gap-2.5">
             <span className="balance-gradient relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[9px]">
               <ArrowUpRight size={18} className="text-white" strokeWidth={2.75} />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-accent ring-2 ring-card" />
             </span>
               {!collapsed && (
                   <span className="truncate text-base font-bold tracking-tight text-foreground">
@@ -247,7 +248,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="relative w-9 h-9 flex items-center justify-center rounded-lg text-foreground hover:bg-secondary transition-colors"
                 >
                   <Bell size={19} strokeWidth={1.9} />
-                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive ring-2 ring-card" />
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent ring-2 ring-card" />
                 </button>
                 <span className="md:hidden w-9 h-9 rounded-full balance-gradient flex items-center justify-center">
                 <span className="text-white font-semibold text-xs">{initials}</span>

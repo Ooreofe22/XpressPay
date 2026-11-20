@@ -26,13 +26,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isLoginPage, pathname, router])
 
   // Login page renders its own full-screen layout, no sidebar/topbar shell.
-  if (isLoginPage) return <>{children}</>
+  if (isLoginPage) return <div className="app-surface min-h-screen bg-background">{children}</div>
 
   // Avoid flashing admin content before the access check resolves.
   if (!checked) return null
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
+    <div className="app-surface min-h-screen bg-background text-foreground lg:flex">
       {/* Mobile overlay */}
       <div
         onClick={() => setSidebarOpen(false)}

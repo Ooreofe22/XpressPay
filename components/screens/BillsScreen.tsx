@@ -24,6 +24,7 @@ import { BillPaymentFlow } from '@/components/bills/BillPaymentFlow'
 import { useApp } from '@/context/AppContext'
 import { formatCurrency } from '@/lib/utils'
 import { Status } from '@/components/ui/Status'
+import { txStatus } from '@/lib/txStatus'
 
 const CATEGORY_META: Record<
     string,
@@ -533,17 +534,9 @@ export function BillsScreen() {
                                   </div>
                                   <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                                     <p className="text-sm font-bold text-foreground">{formatCurrency(tx.amount)}</p>
-                                    <span
-                                        className={`text-[11px] font-medium capitalize ${
-                                            tx.status === 'completed'
-                                                ? 'text-credit'
-                                                : tx.status === 'failed'
-                                                    ? 'text-destructive'
-                                                    : 'text-muted-foreground'
-                                        }`}
-                                    >
-                            {tx.status}
-                          </span>
+                                    <Status tone={txStatus(tx.status).tone} size="sm" dot>
+                                      {txStatus(tx.status).label}
+                                    </Status>
                                   </div>
                                   <ChevronRight size={16} className="text-muted-foreground/50 flex-shrink-0" />
                                 </button>
