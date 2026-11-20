@@ -40,23 +40,23 @@ export function StatCard({
 
   return (
     <div
-      className="animate-fade-up rounded-2xl border border-card-border bg-card p-5 elevation-1 transition-shadow duration-300 hover:elevation-2"
+      className="animate-fade-up rounded-[22px] border border-card-border/80 bg-card p-5 elevation-1"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="text-[14px] font-medium text-muted-foreground">{label}</p>
         <span
-          className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+          className={`flex h-10 w-10 items-center justify-center rounded-[12px] ${
             tone === 'alert' ? 'bg-warning-tint text-warning' : 'bg-primary-tint text-primary'
           }`}
         >
           <Icon size={17} strokeWidth={2.25} />
         </span>
       </div>
-      <p className="mt-3 text-2xl font-bold tracking-tight text-foreground tabular-nums">
+      <p className="mt-4 text-[2rem] font-bold leading-none tracking-[-0.03em] text-foreground tabular-nums">
         {format(display)}
       </p>
-      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-2 text-[13px] text-muted-foreground">{hint}</p>}
     </div>
   )
 }

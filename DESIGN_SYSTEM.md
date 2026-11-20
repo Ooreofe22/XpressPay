@@ -47,3 +47,22 @@ Headlines get `text-wrap: balance` globally. Limit their width with `max-w-[Nch]
 5. **No capsule pills.** Show status with `Status` (`components/ui/Status.tsx`): a coloured dot or icon and a plain label, with tones `neutral`, `positive`, `warning`, `danger` and `onBrand`. Show a choice between a few options as a segmented control (see the amount picker in `TransferDemo`).
 6. **No filler.** No eyebrow labels above headlines, decorative badges, gradient washes or ornamental dots.
 7. **Copy.** Specific headlines, plain sentences, no em dashes.
+
+## App screens
+
+Signed-in screens (app, admin, receipt, bills) sit inside `.app-surface`, which swaps in the app palette: green tinted neutrals and the orange accent. The landing page keeps the neutral palette.
+
+Build every app screen from `components/app/kit.tsx`:
+
+| Part | Use |
+| --- | --- |
+| `PageHeader` | Large title, one line of context, optional actions |
+| `Panel` | Grouped content: 24px corners, hairline border |
+| `SectionTitle` | 17px heading with an optional text action |
+| `ListRow` | One line in a grouped list: tile, title, detail, trailing |
+| `IconTile` | Squircle icon holder in `green`, `orange`, `neutral`, `onBrand` or `solid` |
+| `Button` | `primary`, `accent`, `secondary`, `ghost`, `danger`, `onBrand`, `onBrandSolid`; `loading` swaps the icon for a spinner |
+| `EmptyState` | Icon, title, one sentence and an optional action |
+| `Skeleton` | Shimmering placeholder while data loads |
+
+Choices between a few options use a segmented control with a sliding thumb. Overlays render into `.app-surface` through a portal so they cover the whole window.

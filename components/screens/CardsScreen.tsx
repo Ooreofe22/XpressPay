@@ -1,250 +1,197 @@
 'use client'
 
 import React, { useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useApp } from '@/context/AppContext'
 import { formatCurrency } from '@/lib/utils'
-import {
-  Plus,
-  Wifi,
-  Snowflake,
-  Settings2,
-  FileText,
-  ShieldCheck,
-  Globe,
-  Lock,
-  ChevronRight,
-} from 'lucide-react'
+import { Wifi, Snowflake, SlidersHorizontal, FileText, Link2 } from 'lucide-react'
 import { Status } from '@/components/ui/Status'
+import { Button, IconTile, ListRow, PageHeader, Panel, SectionTitle } from '@/components/app/kit'
 
-/** Realistic bank card visual */
-function BankCard({
-  masked,
-  holder,
-  expiry,
-  badge,
-}: {
-  masked: string
-  holder: string
-  expiry: string
-  badge?: string
-}) {
+function BankCard({ masked, holder, expiry, muted }: { masked: string; holder: string; expiry: string; muted?: boolean }) {
   return (
-    <div className="relative w-full max-w-sm aspect-[1.586] rounded-2xl bank-card-gradient elevation-3 p-6 flex flex-col justify-between overflow-hidden">
-      {/* Sheen */}
-      <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_20%_0%,rgba(255,255,255,0.08),transparent_60%)] pointer-events-none" />
-
-      {/* Top row: brand + contactless */}
-      <div className="flex items-start justify-between relative">
-        <div>
-          <p className="text-white font-bold text-sm tracking-tight">PayXpress</p>
-          <p className="text-white/50 text-[10px]">Digital Banking</p>
-        </div>
-        <Wifi size={18} className="text-white/70 rotate-90" />
+    <div
+      className={`bank-card-gradient relative flex aspect-[1.586] w-full max-w-[400px] flex-col justify-between overflow-hidden rounded-[24px] p-6 text-white shadow-[0_40px_80px_-24px_rgba(0,0,0,0.55)] sm:p-7 ${
+        muted ? 'opacity-80 saturate-50' : ''
+      }`}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_70%_at_15%_0%,rgba(255,255,255,0.12),transparent_60%)]" />
+      <div className="relative flex items-start justify-between">
+        <span className="text-[16px] font-semibold tracking-[-0.01em]">PayXpress</span>
+        <Wifi size={20} className="rotate-90 text-white/80" />
       </div>
-
-      {/* Chip */}
-      <div className="relative">
-        <div className="w-11 h-8 rounded-md bg-gradient-to-br from-amber-200 via-amber-300 to-amber-400 border border-amber-500/40">
-          <div className="w-full h-full grid grid-cols-2 gap-px p-1">
-            <div className="border border-amber-500/40 rounded-sm" />
-            <div className="border border-amber-500/40 rounded-sm" />
-            <div className="border border-amber-500/40 rounded-sm" />
-            <div className="border border-amber-500/40 rounded-sm" />
-          </div>
+      <div className="relative h-9 w-12 rounded-[7px] bg-gradient-to-br from-amber-200 via-amber-300 to-amber-500 p-1">
+        <div className="grid h-full w-full grid-cols-2 gap-px">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <span key={i} className="rounded-[2px] border border-amber-600/30" />
+          ))}
         </div>
       </div>
-
-      {/* Number */}
-      <p className="text-white font-mono text-lg tracking-[0.18em] relative">{masked}</p>
-
-      {/* Bottom row */}
-      <div className="flex items-end justify-between relative">
-        <div>
-          <p className="text-white/50 text-[9px] uppercase tracking-wider mb-0.5">Card Holder</p>
-          <p className="text-white text-xs font-semibold tracking-wide">{holder}</p>
-        </div>
-        <div>
-          <p className="text-white/50 text-[9px] uppercase tracking-wider mb-0.5">Expires</p>
-          <p className="text-white text-xs font-semibold">{expiry}</p>
-        </div>
-        <p className="text-white font-bold text-sm italic tracking-tight">VERVE</p>
+      <p className="relative font-mono text-[18px] tracking-[0.14em] sm:text-[20px]">{masked}</p>
+      <div className="relative flex items-end justify-between text-[13px]">
+        <span className="font-medium text-white/90">{holder}</span>
+        <span className="flex items-end gap-5">
+          <span className="font-medium text-white/90 tabular-nums">{expiry}</span>
+          <span className="text-[16px] font-bold italic tracking-tight">VERVE</span>
+        </span>
       </div>
-
-      {badge && (
-        <Status tone="onBrand" size="sm" className="absolute top-5 right-14">
-          {badge}
-        </Status>
-      )}
     </div>
   )
 }
 
-const cardActions = [
-  { id: 'freeze', label: 'Freeze', icon: Snowflake },
-  { id: 'settings', label: 'Controls', icon: Settings2 },
-  { id: 'statement', label: 'Statement', icon: FileText },
-]
-
-const benefits = [
-  {
-    icon: ShieldCheck,
-    title: 'Protected spending',
-    desc: 'Every transaction is monitored and secured.',
-  },
-  { icon: Globe, title: 'Works everywhere', desc: 'Use online and in-store, wherever Verve is accepted.' },
-  { icon: Lock, title: 'You stay in control', desc: 'Freeze, set limits, or block your card instantly.' },
+const controls = [
+  { id: 'freeze', label: 'Freeze card', detail: 'Pause every payment instantly', icon: Snowflake },
+  { id: 'limits', label: 'Spending limits', detail: 'Daily and monthly caps', icon: SlidersHorizontal },
+  { id: 'statement', label: 'Card statement', detail: 'Download as PDF', icon: FileText },
 ]
 
 export function CardsScreen() {
-  const { user } = useApp()
-  const [activeTab, setActiveTab] = useState<'physical' | 'virtual'>('physical')
+  const { user, transactions } = useApp()
+  const reduce = useReducedMotion()
+  const [kind, setKind] = useState<'physical' | 'virtual'>('physical')
 
   if (!user) return null
 
-  const isVirtual = activeTab === 'virtual'
-  const holder = user.name.toUpperCase()
+  const isVirtual = kind === 'virtual'
+  const limit = 500000
+  const spent = transactions
+    .filter((t) => t.type === 'sent' || t.type === 'payment')
+    .reduce((s, t) => s + t.amount, 0)
+  const usedPct = Math.min(100, Math.round((spent / limit) * 100))
 
   return (
-    <div className="animate-fade-up space-y-6">
-      {/* Section header: title + segmented control + add */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Your cards</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your physical and virtual cards in one place
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="inline-flex rounded-xl bg-secondary p-1" role="tablist">
-            {(
-              [
-                { id: 'physical', label: 'Physical' },
-                { id: 'virtual', label: 'Virtual' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-card text-primary elevation-1'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+    <div className="animate-fade-up">
+      <PageHeader
+        title="Cards"
+        subtitle="Your Verve card, linked to your PayXpress balance."
+        actions={
+          <div role="tablist" className="inline-grid grid-cols-2 rounded-[12px] bg-secondary p-1">
+            {(['physical', 'virtual'] as const).map((k) => {
+              const sel = kind === k
+              return (
+                <button
+                  key={k}
+                  role="tab"
+                  aria-selected={sel}
+                  onClick={() => setKind(k)}
+                  className={`relative h-9 rounded-[9px] px-5 text-[14px] font-medium capitalize transition-colors ${
+                    sel ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {sel && (
+                    <motion.span
+                      layoutId="cards-seg"
+                      transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute inset-0 rounded-[9px] bg-card elevation-1"
+                      aria-hidden
+                    />
+                  )}
+                  <span className="relative">{k}</span>
+                </button>
+              )
+            })}
+          </div>
+        }
+      />
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Stage */}
+        <section className="relative overflow-hidden rounded-[28px] bg-primary-deep px-6 py-12 text-white sm:px-10 sm:py-16">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-accent/25 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-primary-light/25 blur-3xl" />
+
+          <div className="relative flex justify-center">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={kind}
+                initial={reduce ? { opacity: 0 } : { opacity: 0, rotateY: -25, y: 12 }}
+                animate={{ opacity: 1, rotateY: 0, y: 0 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, rotateY: 25, y: -12 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full [perspective:1200px]"
+                style={{ display: 'flex', justifyContent: 'center' }}
               >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <button className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary-dark transition-colors active:scale-[0.98] elevation-1">
-            <Plus size={17} strokeWidth={2.25} />
-            <span className="hidden sm:inline">Add card</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main two-column layout */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
-        {/* Card display panel */}
-        <section className="bg-card border border-card-border rounded-2xl p-6 lg:p-10 elevation-1 flex flex-col items-center text-center">
-          <div className="relative flex items-center justify-center w-full mb-8">
-            {!isVirtual && (
-              <div className="absolute w-full max-w-sm aspect-[1.586] rounded-2xl bg-primary-tint border border-primary/15 -rotate-3 translate-y-2 scale-95" />
-            )}
-            <BankCard
-              masked={isVirtual ? '**** **** **** 4567' : '**** **** **** 0123'}
-              holder={holder}
-              expiry={isVirtual ? '12/25' : '12/26'}
-              badge={isVirtual ? 'NEW' : undefined}
-            />
+                <BankCard
+                  masked={isVirtual ? '•••• •••• •••• 4567' : '•••• •••• •••• 0123'}
+                  holder={user.name}
+                  expiry={isVirtual ? '12/28' : '12/26'}
+                  muted={isVirtual}
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          <h3 className="text-lg font-bold text-foreground tracking-tight text-balance max-w-sm">
-            {isVirtual ? 'Spend globally with a virtual card' : 'A better way to spend your money'}
-          </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed mt-2 max-w-sm text-pretty">
-            {isVirtual
-              ? 'Get a virtual card and live a global lifestyle with secure online payments.'
-              : 'Link your physical cards to manage your lifestyle and track spending better.'}
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 mt-7 w-full max-w-sm">
-            <button
-              disabled={isVirtual}
-              className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary-dark transition-all active:scale-[0.98] elevation-1 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed"
-            >
-              {isVirtual ? 'Coming soon' : 'Link your bank card'}
-            </button>
-            <button className="w-full sm:w-auto whitespace-nowrap px-4 h-12 text-primary text-sm font-semibold hover:underline">
-              How do I get one?
-            </button>
+          <div className="relative mx-auto mt-10 max-w-md text-center">
+            <h2 className="text-[24px] font-semibold tracking-[-0.025em]">
+              {isVirtual ? 'A card made for online shopping.' : 'Spend straight from your balance.'}
+            </h2>
+            <p className="mt-2 text-[15px] leading-[1.5] text-white/80">
+              {isVirtual
+                ? 'Virtual cards for subscriptions and online stores are on the way.'
+                : 'Link the Verve card in your wallet and every purchase comes out of PayXpress.'}
+            </p>
+            <div className="mt-7 flex justify-center">
+              {isVirtual ? (
+                <Button variant="onBrand" disabled>
+                  Coming soon
+                </Button>
+              ) : (
+                <Button variant="onBrandSolid" icon={<Link2 />}>
+                  Link your bank card
+                </Button>
+              )}
+            </div>
           </div>
         </section>
 
-        {/* Details + actions */}
-        <aside className="space-y-4">
-          {/* Balance breakdown */}
-          <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-            <p className="text-xs font-medium text-muted-foreground">Card balance</p>
-            <p className="text-3xl font-bold text-foreground tracking-tight mt-1">
+        {/* Details */}
+        <aside className="space-y-6">
+          <Panel className="p-6">
+            <div className="flex items-baseline justify-between">
+              <p className="text-[14px] text-muted-foreground">Available to spend</p>
+              <Status tone={isVirtual ? 'neutral' : 'positive'} size="sm" dot>
+                {isVirtual ? 'Not issued' : 'Active'}
+              </Status>
+            </div>
+            <p className="mt-1.5 text-[2rem] font-bold leading-none tracking-[-0.03em] text-foreground tabular-nums">
               {formatCurrency(user.accountBalance)}
             </p>
-            <div className="mt-4 space-y-3 border-t border-card-border pt-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Status</span>
-                <span className="inline-flex items-center gap-1.5 font-semibold text-primary">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  {isVirtual ? 'Not activated' : 'Active'}
+
+            <div className="mt-6">
+              <div className="flex justify-between text-[13px]">
+                <span className="text-muted-foreground">Spent this month</span>
+                <span className="font-medium text-foreground tabular-nums">
+                  {formatCurrency(spent)} of {formatCurrency(limit)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Monthly spend limit</span>
-                <span className="font-semibold text-foreground">{formatCurrency(500000)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Card type</span>
-                <span className="font-semibold text-foreground capitalize">{activeTab}</span>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
+                <motion.div
+                  className={`h-full rounded-full ${usedPct > 80 ? 'bg-accent' : 'bg-primary'}`}
+                  initial={false}
+                  animate={{ width: `${Math.max(usedPct, 2)}%` }}
+                  transition={{ duration: reduce ? 0 : 0.6, ease: [0.16, 1, 0.3, 1] }}
+                />
               </div>
             </div>
-          </div>
+          </Panel>
 
-          {/* Quick actions */}
-          <div className="grid grid-cols-3 gap-3">
-            {cardActions.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-card border border-card-border elevation-1 hover:border-primary/30 transition-all active:scale-95 group"
-              >
-                <span className="w-10 h-10 rounded-full bg-primary-tint flex items-center justify-center group-hover:bg-primary transition-colors">
-                  <Icon
-                    size={18}
-                    strokeWidth={2}
-                    className="text-primary group-hover:text-white transition-colors"
+          <section>
+            <SectionTitle title="Card controls" />
+            <Panel className="overflow-hidden">
+              <div className="divide-y divide-card-border/70">
+                {controls.map(({ id, label, detail, icon: Icon }) => (
+                  <ListRow
+                    key={id}
+                    className="opacity-80"
+                    leading={<IconTile tone={id === 'freeze' ? 'green' : 'orange'} icon={<Icon size={18} strokeWidth={2} />} />}
+                    title={label}
+                    detail={detail}
+                    trailing={<span className="text-[13px] text-muted-foreground">Soon</span>}
                   />
-                </span>
-                <span className="text-xs font-semibold text-foreground">{label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Benefits */}
-          <div className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-            <p className="text-sm font-bold text-foreground mb-4">Why you&apos;ll love it</p>
-            <ul className="space-y-4">
-              {benefits.map(({ icon: Icon, title, desc }) => (
-                <li key={title} className="flex items-start gap-3">
-                  <span className="w-9 h-9 rounded-xl border border-card-border bg-background flex items-center justify-center flex-shrink-0">
-                    <Icon size={17} className="text-primary" strokeWidth={2} />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{title}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+                ))}
+              </div>
+            </Panel>
+          </section>
         </aside>
       </div>
     </div>

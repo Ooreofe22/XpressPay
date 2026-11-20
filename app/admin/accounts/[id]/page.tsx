@@ -101,16 +101,16 @@ export default function AccountDetailPage() {
       </Link>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+        <div className="flex items-center gap-2 rounded-[12px] border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
 
-      <div className="animate-fade-up rounded-2xl border border-card-border bg-card p-6 elevation-1">
+      <div className="animate-fade-up rounded-[22px] border border-card-border/80 bg-card p-6 elevation-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-foreground">{account.email}</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Created {formatDateTime(account.createdAt)}</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">Created {formatDateTime(account.createdAt)}</p>
           </div>
           {account.flagged && (
             <Status tone="warning" icon={<AlertTriangle />}>
@@ -120,12 +120,12 @@ export default function AccountDetailPage() {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-4">
-          <div className="rounded-xl bg-secondary/40 p-4">
-            <p className="text-xs text-muted-foreground">Balance</p>
+          <div className="rounded-[12px] bg-secondary/40 p-4">
+            <p className="text-[13px] text-muted-foreground">Balance</p>
             <p className="mt-1 text-xl font-bold tabular-nums text-foreground">{formatNaira(account.balance)}</p>
           </div>
-          <div className="rounded-xl bg-secondary/40 p-4">
-            <p className="text-xs text-muted-foreground">Status</p>
+          <div className="rounded-[12px] bg-secondary/40 p-4">
+            <p className="text-[13px] text-muted-foreground">Status</p>
             <p className="mt-1 text-xl font-bold text-foreground">{account.status}</p>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function AccountDetailPage() {
             <button
               onClick={handleReactivate}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-[12px] bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               <CheckCircle2 size={15} /> Reactivate
             </button>
@@ -143,7 +143,7 @@ export default function AccountDetailPage() {
             <button
               onClick={handleDeactivate}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-secondary px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-[12px] bg-secondary px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
             >
               <Ban size={15} /> Deactivate
             </button>
@@ -151,7 +151,7 @@ export default function AccountDetailPage() {
           <button
             onClick={handleDelete}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-[12px] bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive disabled:opacity-50"
           >
             <Trash2 size={15} /> Delete account
           </button>
@@ -163,10 +163,10 @@ export default function AccountDetailPage() {
         {flagged.length === 0 ? (
           <p className="text-sm text-muted-foreground">No transactions over ₦20,000 on this account.</p>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-card-border bg-card elevation-1">
+          <div className="overflow-hidden rounded-[22px] border border-card-border/80 bg-card elevation-1">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-secondary/40 text-left text-xs font-semibold text-muted-foreground">
+                <tr className="border-b border-border bg-secondary/40 text-left text-[13px] font-semibold text-muted-foreground">
                   <th className="px-4 py-3">Biller</th>
                   <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Status</th>

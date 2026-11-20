@@ -45,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <AdminTopbar onMenu={() => setSidebarOpen(true)} />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-12 pt-4 sm:px-8">{children}</main>
       </div>
     </div>
   )

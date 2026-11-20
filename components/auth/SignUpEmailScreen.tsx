@@ -3,7 +3,8 @@
 import React, { useState } from 'react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
-import { Loader2, Mail, Fingerprint, ShieldCheck, Check } from 'lucide-react'
+import { Mail, Fingerprint, ShieldCheck, Check } from 'lucide-react'
+import { Spinner } from '@/components/app/kit'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 // NOTE: signup collects email + BVN together on this one screen — the
@@ -58,10 +59,10 @@ export function SignUpEmailScreen() {
       <div className="space-y-8">
         {/* Heading */}
         <motion.div {...rise(0.05)} className="space-y-3">
-          <h1 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="type-title-1 text-foreground">
             Let&apos;s get you started
           </h1>
-          <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
+          <p className="type-body text-muted-foreground">
             Enter your email and BVN and we&apos;ll send a verification code to confirm it&apos;s
             you.
           </p>
@@ -89,10 +90,10 @@ export function SignUpEmailScreen() {
                 if (error) setError('')
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-              className="h-13 w-full rounded-xl border border-card-border bg-card pl-11 pr-4 text-base font-medium text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+              className="h-14 w-full rounded-[14px] border border-card-border bg-background pl-11 pr-4 text-[17px] text-foreground transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-primary focus:bg-card focus:outline-none focus:ring-4 focus:ring-primary/10"
             />
           </div>
-          <p className="text-xs text-muted-foreground">Your code and receipts will be sent here</p>
+          <p className="text-[13px] text-muted-foreground">Your code and receipts will be sent here</p>
         </motion.div>
 
         {/* BVN input */}
@@ -102,7 +103,7 @@ export function SignUpEmailScreen() {
               Bank Verification Number
             </label>
             <span
-              className={`text-xs font-medium tabular-nums transition-colors ${
+              className={`text-[13px] font-medium tabular-nums transition-colors ${
                 isValidBvn ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
@@ -126,7 +127,7 @@ export function SignUpEmailScreen() {
                 if (error) setError('')
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-              className={`h-13 w-full rounded-xl border bg-card pl-11 pr-12 font-mono text-base font-semibold tracking-[0.18em] text-foreground transition-all duration-200 placeholder:font-sans placeholder:font-medium placeholder:tracking-normal placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 ${
+              className={`h-14 w-full rounded-[14px] border bg-background pl-11 pr-12 font-mono text-base font-semibold tracking-[0.18em] text-foreground transition-all duration-200 placeholder:font-sans placeholder:font-medium placeholder:tracking-normal placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 ${
                 isValidBvn
                   ? 'border-primary focus:border-primary focus:ring-primary/10'
                   : 'border-card-border focus:border-primary focus:ring-primary/10'
@@ -146,7 +147,7 @@ export function SignUpEmailScreen() {
               )}
             </AnimatePresence>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Dial <span className="font-semibold text-foreground">*565*0#</span> on your registered
             line to check your BVN
           </p>
@@ -155,10 +156,10 @@ export function SignUpEmailScreen() {
         {/* Trust card */}
         <motion.div
           {...rise(0.24)}
-          className="flex items-start gap-3 rounded-2xl bg-primary-tint/60 p-4"
+          className="flex items-start gap-3 rounded-[16px] bg-primary-tint/70 p-4"
         >
           <ShieldCheck size={17} className="mt-0.5 flex-shrink-0 text-primary" />
-          <p className="text-xs leading-relaxed text-muted-foreground">
+          <p className="text-[13px] leading-[1.5] text-muted-foreground">
             We use verification codes instead of passwords, so your account stays secure even if someone
             knows your email. Your BVN identifies you; we never share it with third parties.
           </p>
@@ -177,7 +178,7 @@ export function SignUpEmailScreen() {
               }
               exit={{ opacity: 0 }}
               transition={{ duration: 0.45 }}
-              className="rounded-xl bg-destructive/10 px-4 py-3 text-center text-sm font-medium text-destructive"
+              className="rounded-[14px] bg-destructive-tint px-4 py-3 text-center text-sm font-medium text-destructive"
             >
               {error}{' '}
               {error.toLowerCase().includes('already exists') && (
@@ -199,9 +200,9 @@ export function SignUpEmailScreen() {
             disabled={!canContinue || loading}
             whileHover={reduce || !canContinue ? undefined : { scale: 1.01 }}
             whileTap={reduce || !canContinue ? undefined : { scale: 0.98 }}
-            className="flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground elevation-1"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[17px] font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground disabled:shadow-none"
           >
-            {loading && <Loader2 size={18} className="animate-spin" />}
+            {loading && <Spinner size={18} />}
             {loading ? 'Sending code…' : 'Continue'}
           </motion.button>
         </motion.div>

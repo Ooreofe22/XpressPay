@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
-import { Loader2 } from 'lucide-react'
+import { Spinner } from '@/components/app/kit'
 
 export function LoginOTPScreen() {
   const { setAuthScreen, verifyLoginOtp, requestLoginOtp, pendingEmail } = useApp()
@@ -78,10 +78,10 @@ export function LoginOTPScreen() {
       <div className="space-y-10">
         {/* Heading */}
         <div className="space-y-3">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight text-balance">
+          <h1 className="type-title-1 text-foreground">
             Confirm email address
           </h1>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="type-body text-muted-foreground">
             Please enter the code sent to{' '}
             <span className="font-semibold text-foreground">{maskedEmail}</span>
           </p>
@@ -100,7 +100,7 @@ export function LoginOTPScreen() {
               onChange={(e) => handleOtpChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               aria-label={`Digit ${index + 1}`}
-              className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 ${
+              className={`w-12 h-14 text-center text-2xl font-bold rounded-[14px] border-[1.5px] text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 ${
                 digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
               }`}
             />
@@ -108,7 +108,7 @@ export function LoginOTPScreen() {
         </div>
 
         {error && (
-          <div className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg -mt-4">
+          <div className="text-sm text-destructive font-medium text-center bg-destructive-tint px-4 py-3 rounded-[14px] -mt-4">
             {error}
           </div>
         )}
@@ -132,9 +132,9 @@ export function LoginOTPScreen() {
         <button
           onClick={handleVerify}
           disabled={!isComplete || loading}
-          className="w-full h-13 rounded-xl bg-primary text-primary-foreground font-semibold text-base transition-all duration-200 hover:bg-primary-dark active:scale-[0.98] disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed elevation-1 flex items-center justify-center gap-2"
+          className="w-full h-14 rounded-[14px] bg-primary text-primary-foreground font-semibold text-base transition-all duration-200 hover:bg-primary-dark active:scale-[0.98] disabled:bg-secondary disabled:text-muted-foreground disabled:shadow-none disabled:cursor-not-allowed elevation-1 flex items-center justify-center gap-2"
         >
-          {loading && <Loader2 size={18} className="animate-spin" />}
+          {loading && <Spinner size={18} />}
           {loading ? 'Verifying...' : 'Continue'}
         </button>
       </div>

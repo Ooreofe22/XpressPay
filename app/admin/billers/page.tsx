@@ -84,7 +84,7 @@ export default function BillersPage() {
     return (
       <div className="grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="h-28 rounded-2xl border border-card-border bg-card" />
+          <div key={i} className="h-28 rounded-[22px] border border-card-border/80 bg-card" />
         ))}
       </div>
     )
@@ -108,13 +108,13 @@ export default function BillersPage() {
       </div>
 
       {error && (
-        <div className="animate-fade-up flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+        <div className="animate-fade-up flex items-center gap-2 rounded-[12px] border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
 
       {syncedMsg && (
-        <div className="animate-fade-up flex items-center gap-2.5 rounded-xl border border-primary/25 bg-primary-tint px-4 py-3 text-sm font-semibold text-primary">
+        <div className="animate-fade-up flex items-center gap-2.5 rounded-[12px] border border-primary/25 bg-primary-tint px-4 py-3 text-sm font-semibold text-primary">
           <CheckCircle2 size={16} />
           {syncedMsg}
         </div>
@@ -127,7 +127,7 @@ export default function BillersPage() {
             style={{ animationDelay: `${ci * 60}ms` }}
           >
             {categoryLabel(categoryPath)}
-            <span className="ml-2 text-xs font-medium text-muted-foreground">
+            <span className="ml-2 text-[13px] font-medium text-muted-foreground">
               {group.length} product{group.length === 1 ? '' : 's'}
             </span>
           </h2>
@@ -136,7 +136,7 @@ export default function BillersPage() {
               <div
                 key={biller.id}
                 style={{ animationDelay: `${ci * 60 + i * 40}ms` }}
-                className={`animate-fade-up rounded-2xl border border-card-border bg-card p-4 elevation-1 transition-all duration-300 hover:elevation-2 ${
+                className={`animate-fade-up rounded-[22px] border border-card-border/80 bg-card p-4 elevation-1 transition-all duration-300 hover:elevation-2 ${
                   biller.active ? '' : 'opacity-70'
                 }`}
               >
@@ -145,7 +145,7 @@ export default function BillersPage() {
                     <BillerAvatar biller={biller} />
                     <div>
                       <p className="text-sm font-bold text-foreground">{biller.name}</p>
-                      <p className="font-mono text-[11px] text-muted-foreground">{biller.uniqueCode}</p>
+                      <p className="font-mono text-[13px] text-muted-foreground">{biller.uniqueCode}</p>
                     </div>
                   </div>
                   <button
@@ -164,7 +164,7 @@ export default function BillersPage() {
                     />
                   </button>
                 </div>
-                <p className="mt-3 text-[11px] text-muted-foreground">
+                <p className="mt-3 text-[13px] text-muted-foreground">
                   {biller.lastSyncedAt ? `Last synced ${timeAgo(biller.lastSyncedAt)}` : 'Never synced'} ·{' '}
                   <span className={biller.active ? 'text-primary' : ''}>
                     {biller.active ? 'live in app' : 'hidden from app'}

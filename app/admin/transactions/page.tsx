@@ -114,19 +114,19 @@ export default function TransactionsPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+        <div className="flex items-center gap-2 rounded-[12px] border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
 
       <div
-        className="animate-fade-up overflow-hidden rounded-2xl border border-card-border bg-card elevation-1"
+        className="animate-fade-up overflow-hidden rounded-[22px] border border-card-border/80 bg-card elevation-1"
         style={{ animationDelay: '80ms' }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
+              <tr className="border-b border-border text-[13px] text-muted-foreground">
                 <th className="px-5 py-3 font-semibold">Reference</th>
                 <th className="px-5 py-3 font-semibold">Biller</th>
                 <th className="px-5 py-3 font-semibold">User</th>
@@ -152,7 +152,7 @@ export default function TransactionsPage() {
                     className="animate-fade-up cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-secondary/60"
                     style={{ animationDelay: `${Math.min(i * 40, 400)}ms` }}
                   >
-                    <td className="px-5 py-3.5 font-mono text-xs font-semibold text-foreground">
+                    <td className="px-5 py-3.5 font-mono text-[13px] font-semibold text-foreground">
                       {tx.paystackReference ?? tx.id.slice(0, 10)}
                     </td>
                     <td className="px-5 py-3.5">
@@ -168,7 +168,7 @@ export default function TransactionsPage() {
                     <td className="px-5 py-3.5">
                       <StatusBadge status={tx.status} />
                     </td>
-                    <td className="px-5 py-3.5 text-right text-xs whitespace-nowrap text-muted-foreground">
+                    <td className="px-5 py-3.5 text-right text-[13px] whitespace-nowrap text-muted-foreground">
                       {timeAgo(tx.createdAt)}
                     </td>
                   </tr>
@@ -204,7 +204,7 @@ export default function TransactionsPage() {
                 <CategoryIcon category={drawerTx.billerCategoryPath} />
                 <div>
                   <p className="text-sm font-bold text-foreground">{drawerTx.billerUniqueCode ?? 'Transaction'}</p>
-                  <p className="text-xs text-muted-foreground">{drawerTx.paymentMethod ?? '—'}</p>
+                  <p className="text-[13px] text-muted-foreground">{drawerTx.paymentMethod ?? '—'}</p>
                 </div>
               </div>
               <button
@@ -217,12 +217,12 @@ export default function TransactionsPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5">
-              <div className="balance-gradient mb-5 rounded-2xl p-5 text-white elevation-2">
-                <p className="text-xs font-medium text-white/70">Amount</p>
+              <div className="balance-gradient mb-5 rounded-[22px] p-5 text-white elevation-2">
+                <p className="text-[13px] font-medium text-white/70">Amount</p>
                 <p className="mt-1 text-3xl font-bold tabular-nums">{formatNaira(drawerTx.amount)}</p>
                 <div className="mt-3 flex items-center justify-between">
                   <StatusBadge status={drawerTx.status} />
-                  <span className="text-xs text-white/70">{drawerTx.paymentMethod ?? '—'}</span>
+                  <span className="text-[13px] text-white/70">{drawerTx.paymentMethod ?? '—'}</span>
                 </div>
               </div>
 
@@ -241,7 +241,7 @@ export default function TransactionsPage() {
                       {label === 'Reference' && drawerTx.paystackReference ? (
                         <button
                           onClick={() => copyReference(drawerTx.paystackReference as string)}
-                          className="flex items-center gap-1.5 font-mono text-xs transition-colors hover:text-primary"
+                          className="flex items-center gap-1.5 font-mono text-[13px] transition-colors hover:text-primary"
                         >
                           {value}
                           {copied ? (
@@ -259,8 +259,8 @@ export default function TransactionsPage() {
               </dl>
 
               {requeryError && (
-                <div className="mt-5 rounded-xl border border-warning/25 bg-warning-tint p-4">
-                  <p className="text-xs font-bold text-warning uppercase tracking-wide">Re-verify failed</p>
+                <div className="mt-5 rounded-[12px] border border-warning/25 bg-warning-tint p-4">
+                  <p className="text-[13px] font-bold text-warning">Re-verify failed</p>
                   <p className="mt-1.5 text-sm text-foreground">{requeryError}</p>
                 </div>
               )}
@@ -273,7 +273,7 @@ export default function TransactionsPage() {
                 <button
                   onClick={() => handleRequery(drawerTx)}
                   disabled={requerying}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary-dark active:translate-y-px disabled:opacity-60"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary-dark active:translate-y-px disabled:opacity-60"
                 >
                   <RefreshCw size={16} className={requerying ? 'animate-spin' : ''} />
                   {requerying ? 'Re-verifying with Paystack…' : 'Re-verify with Paystack'}

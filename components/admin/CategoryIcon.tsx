@@ -31,7 +31,7 @@ export function CategoryIcon({
 }) {
   const c = resolve(category)
   const Icon = c.icon
-  const box = size === 'sm' ? 'h-8 w-8 rounded-lg' : 'h-10 w-10 rounded-xl'
+  const box = size === 'sm' ? 'h-8 w-8 rounded-lg' : 'h-10 w-10 rounded-[12px]'
   return (
     <span className={`flex shrink-0 items-center justify-center ${box} ${c.className}`}>
       <Icon size={size === 'sm' ? 15 : 18} strokeWidth={2.25} />

@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Check, X, Clock, Download, Share2, Copy, Wallet, CreditCard, Loader2 } from 'lucide-react'
+import { ArrowLeft, Check, X, Clock, Download, Share2, Copy, Wallet, CreditCard, Landmark } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { Button, EmptyState, Panel, Skeleton } from '@/components/app/kit'
+import { txStatus } from '@/lib/txStatus'
 import { useApp } from '@/context/AppContext'
 import { fetchTransaction } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
@@ -17,6 +20,7 @@ export default function ReceiptPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const reduce = useReducedMotion()
 
   useEffect(() => {
     const cached = transactions.find((t) => t.id === params.id)
@@ -26,39 +30,71 @@ export default function ReceiptPage() {
       return
     }
 
-    // not in memory (direct link, refresh, or came from a different session) — fetch it
+    // not in memory (direct link, refresh, or another session): fetch it
     fetchTransaction(params.id)
         .then(setTransaction)
         .catch((err) => setError(err instanceof Error ? err.message : 'Could not load this receipt'))
         .finally(() => setLoading(false))
   }, [params.id, transactions])
 
+  const Shell = ({ children }: { children: React.ReactNode }) => (
+    <div className="min-h-screen bg-background pb-12">
+      <div className="sticky top-0 z-10 border-b border-card-border/70 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-[480px] items-center gap-2 px-4">
+          <button
+            onClick={() => router.back()}
+            aria-label="Back"
+            className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary"
+          >
+            <ArrowLeft size={19} />
+          </button>
+          <p className="text-[16px] font-semibold text-foreground">Receipt</p>
+        </div>
+      </div>
+      <div className="mx-auto max-w-[480px] px-4 pt-6">{children}</div>
+    </div>
+  )
+
   if (loading) {
     return (
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 size={26} className="text-primary animate-spin" />
-        </div>
+      <Shell>
+        <Panel className="space-y-4 p-8" as="div">
+          <Skeleton className="mx-auto h-16 w-16 rounded-full" />
+          <Skeleton className="mx-auto h-4 w-28" />
+          <Skeleton className="mx-auto h-11 w-48" />
+          <div className="space-y-3 pt-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+          </div>
+        </Panel>
+      </Shell>
     )
   }
 
   if (error || !transaction) {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
-          <p className="text-base font-bold text-foreground mb-1">Receipt not found</p>
-          <p className="text-sm text-muted-foreground mb-6">{error || "This transaction doesn't exist."}</p>
-          <button
-              onClick={() => router.back()}
-              className="h-11 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-sm"
-          >
-            Go back
-          </button>
-        </div>
+      <Shell>
+        <Panel>
+          <EmptyState
+            icon={<X size={22} />}
+            title="Receipt not found"
+            body={error || "This transaction doesn't exist."}
+            action={
+              <Button size="sm" onClick={() => router.back()}>
+                Go back
+              </Button>
+            }
+          />
+        </Panel>
+      </Shell>
     )
   }
 
-  const isSuccess = transaction.status === 'completed'
-  const isFailed = transaction.status === 'failed'
-  const isPending = transaction.status === 'pending'
+  const when = new Date(transaction.timestamp)
+  const tone = txStatus(transaction.status).tone
+  const isSuccess = tone === 'positive'
+  const isFailed = tone === 'danger'
   const isBalancePayment = transaction.paymentMethod === 'BALANCE'
 
   const statusConfig = isSuccess
@@ -79,7 +115,7 @@ export default function ReceiptPage() {
       try {
         await navigator.share({ title: 'PayXpress Receipt', text })
       } catch {
-        // user cancelled — no-op
+        // user cancelled
       }
     } else {
       navigator.clipboard.writeText(text)
@@ -100,7 +136,7 @@ export default function ReceiptPage() {
       `Payment method: ${isBalancePayment ? 'PayXpress Balance' : 'Card / Gateway'}`,
       `Reference: ${transaction.reference}`,
       transaction.xpressReferenceId ? `Xpress Ref: ${transaction.xpressReferenceId}` : '',
-      `Date: ${transaction.timestamp.toLocaleDateString()} ${transaction.timestamp.toLocaleTimeString()}`,
+      `Date: ${when.toLocaleDateString()} ${when.toLocaleTimeString()}`,
       '================================',
       'Thank you for using PayXpress.',
     ].filter(Boolean)
@@ -114,137 +150,115 @@ export default function ReceiptPage() {
     URL.revokeObjectURL(url)
   }
 
+  const band = isSuccess
+    ? { cls: 'balance-gradient text-white', icon: Check, label: 'Payment successful', iconCls: 'bg-white text-primary' }
+    : isFailed
+      ? { cls: 'bg-destructive-tint text-destructive', icon: X, label: 'Payment failed', iconCls: 'bg-destructive text-white' }
+      : { cls: 'bg-warning-tint text-warning', icon: Clock, label: 'Payment pending', iconCls: 'bg-warning text-white' }
+  const Icon = band.icon
+
+  const rows: [string, React.ReactNode][] = [
+    [
+      'Paid with',
+      <span key="m" className="inline-flex items-center gap-1.5">
+        {isBalancePayment ? <Wallet size={15} className="text-primary" /> : <CreditCard size={15} className="text-primary" />}
+        {isBalancePayment ? 'PayXpress balance' : 'Card'}
+      </span>,
+    ],
+    ...(transaction.billerCategoryPath
+      ? ([['Category', <span key="c" className="capitalize">{transaction.billerCategoryPath}</span>]] as [string, React.ReactNode][])
+      : []),
+    ['Date', when.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })],
+    ['Time', when.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })],
+  ]
+
   return (
-      <div className="min-h-screen bg-secondary/40 pb-10">
-        {/* Nav bar */}
-        <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-card-border">
-          <div className="max-w-md mx-auto px-4 h-14 flex items-center gap-3">
-            <button
-                onClick={() => router.back()}
-                className="w-9 h-9 flex items-center justify-center rounded-lg text-foreground hover:bg-secondary transition-colors"
-            >
-              <ArrowLeft size={19} />
-            </button>
-            <p className="text-sm font-bold text-foreground">Receipt</p>
-          </div>
-        </div>
-
-        <div className="max-w-md mx-auto px-4 pt-6">
-          {/* ── Receipt card, real-world styled with a torn/perforated bottom edge ── */}
-          <div className="relative">
-            <div className="bg-card rounded-t-2xl border border-b-0 border-card-border elevation-2 px-6 pt-8 pb-6">
-              {/* Status */}
-              <div className="flex flex-col items-center text-center">
-                <div className={`w-16 h-16 rounded-full ${statusConfig.bg} flex items-center justify-center mb-4`}>
-                  <statusConfig.icon size={28} className="text-white" strokeWidth={3} />
-                </div>
-                <p className={`text-sm font-bold uppercase tracking-wide ${statusConfig.text} mb-2`}>
-                  {statusConfig.label}
-                </p>
-                <p className="text-4xl font-bold text-foreground tracking-tight">
-                  {formatCurrency(transaction.amount)}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isSuccess ? 'Paid to' : isFailed ? 'Payment to' : 'Payment pending to'}{' '}
-                  <span className="font-semibold text-foreground">
-                  {transaction.billerName || transaction.description}
-                </span>
-                </p>
-              </div>
-
-              {isFailed && transaction.billerResponseMessage && (
-                  <div className="mt-5 bg-destructive/10 rounded-xl p-3 text-xs text-destructive text-center">
-                    {transaction.billerResponseMessage}
-                  </div>
-              )}
-            </div>
-
-            {/* Perforation */}
-            <div className="relative h-5 bg-card border-x border-card-border overflow-visible">
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t-2 border-dashed border-secondary" />
-              <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-secondary/40" />
-              <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-secondary/40" />
-            </div>
-
-            {/* Details */}
-            <div className="bg-card rounded-b-2xl border border-t-0 border-card-border elevation-2 px-6 py-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Payment method</span>
-                <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                {isBalancePayment ? <Wallet size={14} className="text-primary" /> : <CreditCard size={14} className="text-primary" />}
-                  {isBalancePayment ? 'PayXpress Balance' : 'Card / Gateway'}
-              </span>
-              </div>
-
-              {transaction.billerCategoryPath && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Category</span>
-                    <span className="text-sm font-semibold text-foreground capitalize">
-                  {transaction.billerCategoryPath}
-                </span>
-                  </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Date</span>
-                <span className="text-sm font-semibold text-foreground">
-                {transaction.timestamp.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Time</span>
-                <span className="text-sm font-semibold text-foreground">
-                {transaction.timestamp.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-              </div>
-
-              <div className="pt-4 border-t border-dashed border-card-border flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Reference</span>
-                <button
-                    onClick={handleCopyRef}
-                    className="flex items-center gap-1.5 text-sm font-mono font-semibold text-foreground hover:text-primary transition-colors"
-                >
-                  {transaction.reference}
-                  <Copy size={12} />
-                </button>
-              </div>
-
-              {transaction.xpressReferenceId && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Xpress Ref</span>
-                    <span className="text-xs font-mono text-muted-foreground">{transaction.xpressReferenceId}</span>
-                  </div>
-              )}
-            </div>
-          </div>
-
-          {copied && (
-              <div className="text-center text-xs font-semibold text-primary mt-3">Copied to clipboard</div>
-          )}
-
-          {/* Actions */}
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <button
-                onClick={handleDownload}
-                className="h-12 rounded-xl bg-card border border-card-border text-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-secondary transition-colors elevation-1"
-            >
-              <Download size={16} />
-              Download
-            </button>
-            <button
-                onClick={handleShare}
-                className="h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-colors elevation-1"
-            >
-              <Share2 size={16} />
-              Share
-            </button>
-          </div>
-
-          <p className="text-center text-xs text-muted-foreground mt-8">
-            Licensed by the CBN and insured by the NDIC.
+    <Shell>
+      <motion.div
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="overflow-hidden rounded-[28px] border border-card-border/80 bg-card elevation-2"
+      >
+        <div className={`flex flex-col items-center px-6 pb-8 pt-9 text-center ${band.cls}`}>
+          <span className={`flex h-14 w-14 items-center justify-center rounded-full ${band.iconCls}`}>
+            <Icon size={26} strokeWidth={3} />
+          </span>
+          <p className="mt-4 text-[15px] font-medium">{band.label}</p>
+          <p
+            className={`mt-1 text-[44px] font-bold leading-none tracking-[-0.04em] tabular-nums ${
+              isSuccess ? 'text-white' : 'text-foreground'
+            }`}
+          >
+            {formatCurrency(transaction.amount)}
+          </p>
+          <p className={`mt-2 text-[15px] ${isSuccess ? 'text-white/85' : 'text-muted-foreground'}`}>
+            to <span className={`font-semibold ${isSuccess ? 'text-white' : 'text-foreground'}`}>{transaction.billerName || transaction.description}</span>
           </p>
         </div>
+
+        {isFailed && transaction.billerResponseMessage && (
+          <p className="mx-6 mt-6 rounded-[14px] bg-destructive-tint p-3.5 text-center text-[14px] text-destructive">
+            {transaction.billerResponseMessage}
+          </p>
+        )}
+
+        <dl className="divide-y divide-card-border/70 px-6 py-2">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex items-center justify-between gap-4 py-3.5 text-[15px]">
+              <dt className="text-muted-foreground">{k}</dt>
+              <dd className="text-right font-medium text-foreground">{v}</dd>
+            </div>
+          ))}
+          <div className="flex items-center justify-between gap-4 py-3.5 text-[15px]">
+            <dt className="text-muted-foreground">Reference</dt>
+            <dd>
+              <button
+                onClick={handleCopyRef}
+                className="inline-flex items-center gap-1.5 font-mono font-semibold text-foreground transition-colors hover:text-primary"
+                aria-label="Copy reference"
+              >
+                {transaction.reference}
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={copied ? 'ok' : 'copy'}
+                    initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex"
+                  >
+                    {copied ? <Check size={14} className="text-primary" strokeWidth={3} /> : <Copy size={13} />}
+                  </motion.span>
+                </AnimatePresence>
+              </button>
+            </dd>
+          </div>
+          {transaction.xpressReferenceId && (
+            <div className="flex items-center justify-between gap-4 py-3.5 text-[15px]">
+              <dt className="text-muted-foreground">Biller reference</dt>
+              <dd className="font-mono text-[13px] text-muted-foreground">{transaction.xpressReferenceId}</dd>
+            </div>
+          )}
+        </dl>
+      </motion.div>
+
+      <p className="mt-3 h-5 text-center text-[13px] font-medium text-primary" aria-live="polite">
+        {copied ? 'Copied' : ''}
+      </p>
+
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <Button variant="secondary" size="lg" icon={<Download />} onClick={handleDownload}>
+          Download
+        </Button>
+        <Button size="lg" icon={<Share2 />} onClick={handleShare}>
+          Share
+        </Button>
       </div>
+
+      <p className="mt-8 flex items-center justify-center gap-2 text-[13px] text-muted-foreground">
+        <Landmark size={14} />
+        Licensed by the CBN. Deposits insured by the NDIC.
+      </p>
+    </Shell>
   )
 }

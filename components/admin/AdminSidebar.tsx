@@ -12,7 +12,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { Status } from '@/components/ui/Status'
+import { motion, useReducedMotion } from 'motion/react'
 
 const navItems = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -24,27 +24,26 @@ const navItems = [
 
 export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname()
+  const reduce = useReducedMotion()
 
   const isActive = (href: string) =>
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
 
   return (
     <aside
-      className={`splash-gradient fixed inset-y-0 left-0 z-50 flex w-64 flex-col text-white transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-[248px] bg-primary-deep flex-col text-white transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
         open ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
       {/* Brand */}
-      <div className="flex h-16 items-center justify-between px-5">
+      <div className="flex h-[72px] items-center justify-between px-5">
         <Link href="/admin" className="flex items-center gap-2.5" aria-label="PayXpress admin home">
-          <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-white/12 ring-1 ring-white/20">
-            <ArrowUpRight size={18} className="text-white" strokeWidth={2.75} />
+          <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-white text-primary-deep">
+            <ArrowUpRight size={18} strokeWidth={2.75} />
             <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full bg-accent ring-2 ring-primary-deep" />
           </span>
-          <span className="text-[17px] font-bold tracking-tight">PayXpress</span>
-          <Status tone="onBrand" size="sm" className="border-l border-white/25 pl-2.5">
-            Admin
-          </Status>
+          <span className="text-[17px] font-semibold tracking-[-0.02em]">PayXpress</span>
+          <span className="border-l border-white/25 pl-2.5 text-[13px] font-medium text-white/80">Admin</span>
         </Link>
         <button
           onClick={onClose}
@@ -57,7 +56,7 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
 
       {/* Nav */}
       <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
-        {navItems.map((item, i) => {
+        {navItems.map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
           return (
@@ -65,22 +64,23 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
               key={item.href}
               href={item.href}
               onClick={onClose}
-              style={{ animationDelay: `${i * 40}ms` }}
-              className={`animate-fade-up group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                active ? 'bg-white/12 text-white' : 'text-white/65 hover:bg-white/8 hover:text-white'
+              aria-current={active ? 'page' : undefined}
+              className={`relative flex h-11 items-center gap-3 rounded-[12px] px-3.5 text-[15px] transition-colors duration-200 ${
+                active ? 'font-semibold text-white' : 'font-medium text-white/75 hover:bg-white/[0.06] hover:text-white'
               }`}
             >
-              <span
-                className={`absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-r-full bg-accent transition-all duration-300 ${
-                  active ? 'opacity-100' : 'opacity-0'
-                }`}
-              />
-              <Icon
-                size={17}
-                strokeWidth={2.25}
-                className={`transition-transform duration-200 ${active ? '' : 'group-hover:translate-x-0.5'}`}
-              />
-              {item.label}
+              {active && (
+                <motion.span
+                  layoutId="admin-nav"
+                  transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 36 }}
+                  className="absolute inset-0 rounded-[12px] bg-white/[0.11]"
+                  aria-hidden
+                >
+                  <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent" />
+                </motion.span>
+              )}
+              <Icon size={19} strokeWidth={active ? 2.2 : 1.8} className="relative" />
+              <span className="relative">{item.label}</span>
             </Link>
           )
         })}
@@ -90,12 +90,11 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
       <div className="border-t border-white/10 px-5 py-4">
         <Link
           href="/"
-          className="flex items-center gap-1.5 text-xs font-medium text-white/55 transition-colors hover:text-white"
+          className="flex items-center gap-1.5 text-[14px] font-medium text-white/80 transition-colors hover:text-white"
         >
           Back to site
           <ArrowUpRight size={13} strokeWidth={2.5} />
         </Link>
-        <p className="mt-2 text-[11px] text-white/35">Biller Services · v0.1</p>
       </div>
     </aside>
   )

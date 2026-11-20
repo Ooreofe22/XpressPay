@@ -35,7 +35,7 @@ export default function AdminDashboardPage() {
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+      <div className="flex items-center gap-2 rounded-[12px] border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
         <AlertTriangle size={16} /> {error}
       </div>
     )
@@ -45,7 +45,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="grid animate-pulse gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-32 rounded-2xl border border-card-border bg-card" />
+          <div key={i} className="h-32 rounded-[22px] border border-card-border/80 bg-card" />
         ))}
       </div>
     )
@@ -59,9 +59,9 @@ export default function AdminDashboardPage() {
       {stats.reconciliationCount > 0 && (
         <Link
           href="/admin/reconciliation"
-          className="animate-fade-up group flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning-tint px-4 py-3.5 transition-all duration-200 hover:border-warning/50 elevation-1"
+          className="animate-fade-up group flex items-center gap-3 rounded-[22px] border border-warning/25 bg-warning-tint px-4 py-3.5 transition-all duration-200 hover:border-warning/50 elevation-1"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning-tint text-warning">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-warning-tint text-warning">
             <AlertTriangle size={17} strokeWidth={2.25} />
           </span>
           <div className="min-w-0 flex-1">
@@ -69,7 +69,7 @@ export default function AdminDashboardPage() {
               {stats.reconciliationCount} payment{stats.reconciliationCount === 1 ? '' : 's'} need
               reconciliation
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Paystack charge and biller fulfilment disagree. Review before refunding anyone.
             </p>
           </div>
@@ -114,14 +114,14 @@ export default function AdminDashboardPage() {
       </div>
 
       <div
-        className="animate-fade-up rounded-2xl border border-card-border bg-card p-5 elevation-1"
+        className="animate-fade-up rounded-[22px] border border-card-border/80 bg-card p-5 elevation-1"
         style={{ animationDelay: '240ms' }}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-foreground">Recent transactions</h2>
           <Link
             href="/admin/transactions"
-            className="flex items-center gap-1 text-xs font-semibold text-primary transition-colors hover:text-primary-dark"
+            className="flex items-center gap-1 text-[13px] font-semibold text-primary transition-colors hover:text-primary-dark"
           >
             View all
             <ArrowUpRight size={13} strokeWidth={2.5} />
@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
                 <p className="truncate text-[13px] font-semibold text-foreground">
                   {tx.billerUniqueCode ?? 'Unknown biller'}
                 </p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   {tx.userEmail ?? 'unknown user'} · {timeAgo(tx.createdAt)}
                 </p>
               </div>
@@ -160,15 +160,15 @@ export default function AdminDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
           href="/admin/billers"
-          className="animate-fade-up group flex items-center gap-4 rounded-2xl border border-card-border bg-card p-5 elevation-1 transition-all duration-200 hover:elevation-2"
+          className="animate-fade-up group flex items-center gap-4 rounded-[22px] border border-card-border/80 bg-card p-5 elevation-1 transition-all duration-200 hover:elevation-2"
           style={{ animationDelay: '380ms' }}
         >
-          <span className="balance-gradient flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white">
+          <span className="balance-gradient flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] text-white">
             <Layers size={19} strokeWidth={2.25} />
           </span>
           <div className="flex-1">
             <p className="text-sm font-bold text-foreground">Sync biller catalog</p>
-            <p className="text-xs text-muted-foreground">Pull the latest products from XpressPay</p>
+            <p className="text-[13px] text-muted-foreground">Pull the latest products from XpressPay</p>
           </div>
           <ArrowRight
             size={17}
@@ -177,15 +177,15 @@ export default function AdminDashboardPage() {
         </Link>
         <Link
           href="/admin/reconciliation"
-          className="animate-fade-up group flex items-center gap-4 rounded-2xl border border-card-border bg-card p-5 elevation-1 transition-all duration-200 hover:elevation-2"
+          className="animate-fade-up group flex items-center gap-4 rounded-[22px] border border-card-border/80 bg-card p-5 elevation-1 transition-all duration-200 hover:elevation-2"
           style={{ animationDelay: '440ms' }}
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-warning-tint text-warning">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-warning-tint text-warning">
             <CheckCircle2 size={19} strokeWidth={2.25} />
           </span>
           <div className="flex-1">
             <p className="text-sm font-bold text-foreground">Review reconciliation queue</p>
-            <p className="text-xs text-muted-foreground">Re-verify stuck payments against Paystack</p>
+            <p className="text-[13px] text-muted-foreground">Re-verify stuck payments against Paystack</p>
           </div>
           <ArrowRight
             size={17}

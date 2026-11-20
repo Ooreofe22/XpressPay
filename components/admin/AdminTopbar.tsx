@@ -4,6 +4,7 @@ import React from 'react'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import { Status } from '@/components/ui/Status'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 const titles: { prefix: string; title: string; sub: string }[] = [
   { prefix: '/admin/transactions', title: 'Transactions', sub: 'Every payment across all billers' },
@@ -18,8 +19,8 @@ export function AdminTopbar({ onMenu }: { onMenu: () => void }) {
   const current = titles.find((t) => pathname.startsWith(t.prefix)) ?? titles[titles.length - 1]
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
+    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl backdrop-saturate-150">
+      <div className="mx-auto flex h-[72px] w-full max-w-6xl items-center justify-between px-5 sm:px-8">
         <div className="flex items-center gap-3">
           <button
             onClick={onMenu}
@@ -29,10 +30,10 @@ export function AdminTopbar({ onMenu }: { onMenu: () => void }) {
             <Menu size={19} />
           </button>
           <div key={current.prefix} className="animate-fade-up">
-            <h1 className="text-[15px] leading-tight font-bold tracking-tight text-foreground">
+            <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
               {current.title}
             </h1>
-            <p className="text-xs text-muted-foreground">{current.sub}</p>
+            <p className="text-[13px] text-muted-foreground">{current.sub}</p>
           </div>
         </div>
 
@@ -40,7 +41,8 @@ export function AdminTopbar({ onMenu }: { onMenu: () => void }) {
           <Status tone="warning" dot className="hidden sm:inline-flex">
             Test mode
           </Status>
-          <span className="balance-gradient flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white elevation-1">
+          <ThemeToggle />
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[13px] font-semibold text-accent-foreground">
             OP
           </span>
         </div>

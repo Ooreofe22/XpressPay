@@ -1,413 +1,397 @@
 'use client'
 
 import React, { useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useApp } from '@/context/AppContext'
 import {
-    Eye,
-    EyeOff,
-    ArrowUpRight,
-    ArrowDownLeft,
-    Smartphone,
-    Banknote,
-    Copy,
-    Check,
-    ChevronRight,
-    ArrowLeft,
-    ReceiptText,
-    Plus,
-    TrendingUp,
-    TrendingDown,
-    Wifi,
+  Eye,
+  EyeOff,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Smartphone,
+  CreditCard,
+  Copy,
+  Check,
+  ArrowLeft,
+  ReceiptText,
+  Wifi,
 } from 'lucide-react'
 import { SendMoneyScreen } from '@/components/screens/SendMoneyScreen'
 import { formatCurrency } from '@/lib/utils'
 import { Status } from '@/components/ui/Status'
 import { txStatus } from '@/lib/txStatus'
+import { Button, EmptyState, IconTile, ListRow, Panel, SectionTitle } from '@/components/app/kit'
 
-function formatDateGroup(dateStr: string): string {
-    const date = new Date(dateStr)
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+function dateGroup(dateStr: string): string {
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return 'Earlier'
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (date.toDateString() === today.toDateString()) return 'Today'
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
+  return date.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'short' })
+}
 
-    if (date.toDateString() === today.toDateString()) return 'Today'
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
-    return date.toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'short' })
+function greeting(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
 }
 
 function initialsOf(name: string) {
-    return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
+  return name
+    .split(/[\s._]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+}
+
+/** Circular progress ring for account setup. */
+function Ring({ value }: { value: number }) {
+  const r = 22
+  const c = 2 * Math.PI * r
+  return (
+    <svg width="56" height="56" viewBox="0 0 56 56" className="shrink-0 -rotate-90" aria-hidden>
+      <circle cx="28" cy="28" r={r} fill="none" stroke="var(--secondary)" strokeWidth="6" />
+      <circle
+        cx="28"
+        cy="28"
+        r={r}
+        fill="none"
+        stroke="var(--accent)"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - value / 100)}
+      />
+    </svg>
+  )
 }
 
 export function HomeScreen() {
-    const { user, transactions, currentTab, setCurrentTab, bankContacts, setBillsActiveTab } = useApp()
-    const [showBalance, setShowBalance] = useState(true)
-    const [showSendMoney, setShowSendMoney] = useState(false)
-    const [copiedAccount, setCopiedAccount] = useState(false)
+  const { user, transactions, setCurrentTab, bankContacts, setBillsActiveTab } = useApp()
+  const reduce = useReducedMotion()
+  const [showBalance, setShowBalance] = useState(true)
+  const [showSendMoney, setShowSendMoney] = useState(false)
+  const [copied, setCopied] = useState(false)
 
-    if (!user) return null
+  if (!user) return null
 
-    // Send Money sub-screen (reachable from quick action)
-    if (showSendMoney) {
-        return (
-            <div className="max-w-2xl mx-auto">
-                <div className="flex items-center gap-3 mb-4">
-                    <button
-                        onClick={() => setShowSendMoney(false)}
-                        aria-label="Go back"
-                        className="w-9 h-9 flex items-center justify-center text-foreground bg-secondary hover:bg-secondary/70 rounded-full transition-colors active:scale-95"
-                    >
-                        <ArrowLeft size={18} />
-                    </button>
-                    <h2 className="text-lg font-bold text-foreground tracking-tight">Send Money</h2>
-                </div>
-                <div className="bg-card border border-card-border rounded-2xl overflow-hidden elevation-1">
-                    <SendMoneyScreen />
-                </div>
-            </div>
-        )
-    }
-
-    // Group transactions by date
-    const groupedTransactions = transactions.reduce(
-        (acc, tx) => {
-            const dateKey = new Date(tx.timestamp).toDateString()
-            if (!acc[dateKey]) acc[dateKey] = []
-            acc[dateKey].push(tx)
-            return acc
-        },
-        {} as Record<string, typeof transactions>
-    )
-
-    const moneyIn = transactions
-        .filter((t) => t.type === 'received' || t.type === 'deposit')
-        .reduce((sum, t) => sum + t.amount, 0)
-    const moneyOut = transactions
-        .filter((t) => t.type === 'sent' || t.type === 'payment')
-        .reduce((sum, t) => sum + t.amount, 0)
-
-    const goToBills = () => {
-        setBillsActiveTab('bills')
-        setCurrentTab('pay')
-    }
-
-    const goToBillHistory = () => {
-        setBillsActiveTab('transactions')
-        setCurrentTab('pay')
-    }
-
-    const quickActions = [
-        { id: 'send', icon: ArrowUpRight, title: 'Send', onClick: () => setShowSendMoney(true) },
-        { id: 'receive', icon: ArrowDownLeft, title: 'Receive', onClick: () => {} },
-        { id: 'bills', icon: Smartphone, title: 'Airtime & Bills', onClick: goToBills },
-        { id: 'withdraw', icon: Banknote, title: 'Withdraw', onClick: () => {} },
-    ]
-
-    const txIcon = (type: string) => {
-        if (type === 'received' || type === 'deposit')
-            return <ArrowDownLeft size={18} className="text-credit" strokeWidth={2} />
-        if (type === 'sent') return <ArrowUpRight size={18} className="text-foreground" strokeWidth={2} />
-        return <ReceiptText size={18} className="text-foreground" strokeWidth={2} />
-    }
-
-    const recentContacts = bankContacts.slice(0, 4)
-
+  if (showSendMoney) {
     return (
-        <div className="animate-fade-up">
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 lg:gap-6 items-start">
-                {/* ── Main column ─────────────────────────────────────────── */}
-                <div className="xl:col-span-2 space-y-5 lg:space-y-6">
-                    {/* Balance card */}
-                    <section className="balance-gradient rounded-2xl p-5 sm:p-6 lg:p-7 elevation-3 relative overflow-hidden">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <p className="text-xs text-white/70 font-medium">Available Balance</p>
-                                    <button
-                                        onClick={() => setShowBalance(!showBalance)}
-                                        aria-label={showBalance ? 'Hide balance' : 'Show balance'}
-                                        className="p-1 hover:bg-white/10 rounded-full transition-colors"
-                                    >
-                                        {showBalance ? (
-                                            <Eye size={15} className="text-white/70" />
-                                        ) : (
-                                            <EyeOff size={15} className="text-white/70" />
-                                        )}
-                                    </button>
-                                </div>
-                                <p className="text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4">
-                                    {showBalance ? formatCurrency(user.accountBalance) : '₦ ••••••'}
-                                </p>
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(user.accountNumber)
-                                        setCopiedAccount(true)
-                                        setTimeout(() => setCopiedAccount(false), 1500)
-                                    }}
-                                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-2.5 ring-1 ring-inset ring-white/20 transition-colors hover:bg-white/25 active:scale-[0.97]"
-                                >
-                                    <span className="text-xs text-white/80">Acct No</span>
-                                    <span className="text-xs font-mono font-semibold text-white">
-                    {user.accountNumber}
-                  </span>
-                                    {copiedAccount ? (
-                                        <Check size={12} className="text-white" />
-                                    ) : (
-                                        <Copy size={12} className="text-white/70" />
-                                    )}
-                                </button>
-                                {copiedAccount && (
-                                    <p className="text-[11px] text-white/70 mt-1">Copied to clipboard</p>
-                                )}
-                            </div>
-
-                            {/* Desktop quick pay buttons */}
-                            <div className="hidden sm:flex flex-col gap-2 flex-shrink-0">
-                                <button
-                                    onClick={() => setShowSendMoney(true)}
-                                    className="inline-flex items-center gap-2 bg-white text-primary-dark font-semibold text-sm rounded-xl px-4 py-2.5 hover:bg-white/90 transition-colors active:scale-[0.98]"
-                                >
-                                    <ArrowUpRight size={17} strokeWidth={2.25} />
-                                    Send money
-                                </button>
-                                <button
-                                    onClick={goToBills}
-                                    className="inline-flex items-center gap-2 bg-white/10 text-white font-semibold text-sm rounded-xl px-4 py-2.5 hover:bg-white/20 transition-colors active:scale-[0.98]"
-                                >
-                                    <Plus size={17} strokeWidth={2.25} />
-                                    Pay a bill
-                                </button>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Stat cards */}
-                    <section className="grid grid-cols-2 gap-4">
-                        <div className="bg-card border border-card-border rounded-2xl p-4 lg:p-5 elevation-1">
-                            <div className="flex items-center gap-2 mb-3">
-                <span className="w-9 h-9 rounded-full bg-primary-tint flex items-center justify-center">
-                  <TrendingUp size={17} className="text-primary" strokeWidth={2} />
-                </span>
-                                <p className="text-xs font-medium text-muted-foreground">Money In</p>
-                            </div>
-                            <p className="text-xl lg:text-2xl font-bold text-foreground tracking-tight">
-                                {showBalance ? formatCurrency(moneyIn) : '₦ ••••'}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">This month</p>
-                        </div>
-                        <div className="bg-card border border-card-border rounded-2xl p-4 lg:p-5 elevation-1">
-                            <div className="flex items-center gap-2 mb-3">
-                <span className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
-                  <TrendingDown size={17} className="text-foreground" strokeWidth={2} />
-                </span>
-                                <p className="text-xs font-medium text-muted-foreground">Money Out</p>
-                            </div>
-                            <p className="text-xl lg:text-2xl font-bold text-foreground tracking-tight">
-                                {showBalance ? formatCurrency(moneyOut) : '₦ ••••'}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">This month</p>
-                        </div>
-                    </section>
-
-                    {/* Quick actions */}
-                    <section>
-                        <h2 className="text-sm font-bold text-foreground mb-3">Quick Actions</h2>
-                        <div className="grid grid-cols-4 gap-3">
-                            {quickActions.map((action) => {
-                                const Icon = action.icon
-                                return (
-                                    <button
-                                        key={action.id}
-                                        onClick={action.onClick}
-                                        className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card border border-card-border elevation-1 hover:border-primary/30 transition-all active:scale-95 group"
-                                    >
-                    <span className="w-11 h-11 rounded-full bg-primary-tint flex items-center justify-center group-hover:bg-primary transition-colors">
-                      <Icon
-                          size={20}
-                          strokeWidth={2}
-                          className="text-primary group-hover:text-white transition-colors"
-                      />
-                    </span>
-                                        <span className="text-[11px] sm:text-xs font-semibold text-foreground text-center leading-tight px-1">
-                      {action.title}
-                    </span>
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </section>
-
-                    {/* Recent transactions */}
-                    <section>
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-sm font-bold text-foreground">Recent Transactions</h2>
-                            <button
-                                onClick={goToBillHistory}
-                                className="text-xs font-semibold text-primary hover:underline"
-                            >
-                                See all
-                            </button>
-                        </div>
-
-                        {transactions.length === 0 ? (
-                            <div className="bg-card border border-card-border rounded-2xl p-8 text-center elevation-1">
-                                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
-                                    <ReceiptText size={22} className="text-muted-foreground" strokeWidth={1.75} />
-                                </div>
-                                <p className="text-sm font-semibold text-foreground mb-1">No transactions yet</p>
-                                <p className="text-xs text-muted-foreground">Your recent activity will appear here</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {Object.entries(groupedTransactions).map(([dateKey, txs]) => (
-                                    <div key={dateKey}>
-                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                                            {formatDateGroup(dateKey)}
-                                        </p>
-                                        <div className="bg-card border border-card-border rounded-2xl divide-y divide-card-border elevation-1 overflow-hidden">
-                                            {txs.map((tx) => {
-                                                const isCredit = tx.type === 'received' || tx.type === 'deposit'
-                                                const amountColor = isCredit ? 'text-credit' : 'text-foreground'
-                                                const amountPrefix = isCredit ? '+' : '-'
-
-                                                return (
-                                                    <div
-                                                        key={tx.id}
-                                                        className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/40 transition-colors"
-                                                    >
-                                                        <div
-                                                            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                                                isCredit ? 'bg-primary-tint' : 'bg-secondary'
-                                                            }`}
-                                                        >
-                                                            {txIcon(tx.type)}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-semibold text-foreground truncate">
-                                                                {tx.description}
-                                                            </p>
-                                                            <p className="text-xs text-muted-foreground">{tx.reference}</p>
-                                                        </div>
-                                                        <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                                                            <p className={`text-sm font-bold ${amountColor}`}>
-                                                                {amountPrefix}
-                                                                {formatCurrency(tx.amount)}
-                                                            </p>
-                                                            <Status tone={txStatus(tx.status).tone} size="sm" dot>
-                                                                {txStatus(tx.status).label}
-                                                            </Status>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-                </div>
-
-                {/* ── Side column ─────────────────────────────────────────── */}
-                <aside className="space-y-5 lg:space-y-6">
-                    {/* Account setup */}
-                    <section className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-                        <div className="flex items-center justify-between mb-2.5">
-                            <p className="text-sm font-semibold text-foreground">Account Setup</p>
-                            <p className="text-xs font-semibold text-accent">20%</p>
-                        </div>
-                        <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden mb-3">
-                            <div className="h-full w-1/5 bg-accent rounded-full" />
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-                            Complete your profile to unlock higher limits and full features.
-                        </p>
-                        <button
-                            onClick={() => setCurrentTab('profile')}
-                            className="w-full inline-flex items-center justify-between rounded-xl bg-secondary hover:bg-secondary/70 transition-colors px-3.5 py-2.5"
-                        >
-                            <span className="text-xs font-semibold text-foreground">Continue setup</span>
-                            <ChevronRight size={15} className="text-muted-foreground" />
-                        </button>
-                    </section>
-
-                    {/* Card preview */}
-                    <section>
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-sm font-bold text-foreground">My Card</h2>
-                            <button
-                                onClick={() => setCurrentTab('cards')}
-                                className="text-xs font-semibold text-primary hover:underline"
-                            >
-                                Manage
-                            </button>
-                        </div>
-                        <div className="relative w-full aspect-[1.586] rounded-2xl bank-card-gradient elevation-2 p-5 flex flex-col justify-between overflow-hidden">
-                            <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_20%_0%,rgba(255,255,255,0.08),transparent_60%)] pointer-events-none" />
-                            <div className="flex items-start justify-between relative">
-                                <div>
-                                    <p className="text-white font-bold text-sm tracking-tight">PayXpress</p>
-                                    <p className="text-white/50 text-[10px]">Digital Banking</p>
-                                </div>
-                                <Wifi size={18} className="text-white/70 rotate-90" />
-                            </div>
-                            <p className="text-white font-mono text-base tracking-[0.16em] relative">
-                                **** **** **** 0123
-                            </p>
-                            <div className="flex items-end justify-between relative">
-                                <div>
-                                    <p className="text-white/50 text-[9px] uppercase tracking-wider mb-0.5">
-                                        Card Holder
-                                    </p>
-                                    <p className="text-white text-xs font-semibold tracking-wide">
-                                        {user.name.toUpperCase()}
-                                    </p>
-                                </div>
-                                <p className="text-white font-bold text-sm italic tracking-tight">VERVE</p>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Send again */}
-                    {recentContacts.length > 0 && (
-                        <section className="bg-card border border-card-border rounded-2xl p-5 elevation-1">
-                            <div className="flex items-center justify-between mb-4">
-                                <p className="text-sm font-semibold text-foreground">Send Again</p>
-                                <button
-                                    onClick={() => setShowSendMoney(true)}
-                                    className="text-xs font-semibold text-primary hover:underline"
-                                >
-                                    New
-                                </button>
-                            </div>
-                            <div className="space-y-1">
-                                {recentContacts.map((c) => (
-                                    <button
-                                        key={c.id}
-                                        onClick={() => setShowSendMoney(true)}
-                                        className="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-secondary/50 transition-colors"
-                                    >
-                    <span className="w-9 h-9 rounded-full bg-primary-tint flex items-center justify-center flex-shrink-0">
-                      <span className="text-primary font-bold text-[11px]">
-                        {initialsOf(c.name)}
-                      </span>
-                    </span>
-                                        <div className="text-left min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
-                                            <p className="text-xs text-muted-foreground truncate">{c.bankName}</p>
-                                        </div>
-                                        <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-                </aside>
-            </div>
-        </div>
+      <div className="mx-auto max-w-2xl">
+        <button
+          onClick={() => setShowSendMoney(false)}
+          className="mb-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-primary transition-colors hover:text-primary-dark"
+        >
+          <ArrowLeft size={17} />
+          Home
+        </button>
+        <h1 className="type-title-2 mb-6 text-foreground">Send money</h1>
+        <Panel className="overflow-hidden">
+          <SendMoneyScreen />
+        </Panel>
+      </div>
     )
+  }
+
+  const firstName = user.name.split(/[\s._]+/)[0]
+  const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1)
+
+  const grouped = transactions.reduce(
+    (acc, tx) => {
+      const key = dateGroup(String(tx.timestamp))
+      ;(acc[key] ??= []).push(tx)
+      return acc
+    },
+    {} as Record<string, typeof transactions>,
+  )
+
+  const moneyIn = transactions
+    .filter((t) => t.type === 'received' || t.type === 'deposit')
+    .reduce((s, t) => s + t.amount, 0)
+  const moneyOut = transactions
+    .filter((t) => t.type === 'sent' || t.type === 'payment')
+    .reduce((s, t) => s + t.amount, 0)
+  const flowTotal = moneyIn + moneyOut
+  const inPct = flowTotal ? Math.max(4, Math.round((moneyIn / flowTotal) * 100)) : 50
+
+  const goToBills = () => {
+    setBillsActiveTab('bills')
+    setCurrentTab('pay')
+  }
+  const goToHistory = () => {
+    setBillsActiveTab('transactions')
+    setCurrentTab('pay')
+  }
+  const copyAccount = () => {
+    navigator.clipboard?.writeText(user.accountNumber).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1600)
+  }
+
+  const actions = [
+    { label: 'Send', icon: ArrowUpRight, onClick: () => setShowSendMoney(true) },
+    { label: copied ? 'Copied' : 'Receive', icon: copied ? Check : ArrowDownLeft, onClick: copyAccount },
+    { label: 'Airtime & bills', icon: Smartphone, onClick: goToBills },
+    { label: 'Cards', icon: CreditCard, onClick: () => setCurrentTab('cards') },
+  ]
+
+  const hidden = '••••••'
+  const recentContacts = bankContacts.slice(0, 4)
+  const setup = 20
+
+  return (
+    <div className="animate-fade-up">
+      {/* Greeting */}
+      <div className="mb-7 flex flex-col gap-4 sm:mb-9 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[15px] text-muted-foreground">
+            {new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+          <h1 className="type-title-1 mt-1 text-foreground">
+            {greeting()}, {displayName}.
+          </h1>
+        </div>
+        <div className="hidden gap-2 sm:flex">
+          <Button variant="secondary" icon={<ReceiptText />} onClick={goToBills}>
+            Pay a bill
+          </Button>
+          <Button icon={<ArrowUpRight />} onClick={() => setShowSendMoney(true)}>
+            Send money
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid items-start gap-5 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        {/* ── Main column ─────────────────────────────── */}
+        <div className="space-y-5 lg:space-y-6">
+          {/* Balance */}
+          <section className="balance-gradient relative overflow-hidden rounded-[28px] p-6 text-white elevation-3 sm:p-8">
+            <div className="flex items-center gap-2">
+              <p className="text-[14px] font-medium text-white/80">Available balance</p>
+              <button
+                onClick={() => setShowBalance((v) => !v)}
+                aria-label={showBalance ? 'Hide balance' : 'Show balance'}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                {showBalance ? <Eye size={15} /> : <EyeOff size={15} />}
+              </button>
+            </div>
+            <p className="mt-2 text-[clamp(2.6rem,1.8rem+3.4vw,4.25rem)] font-bold leading-none tracking-[-0.04em] tabular-nums">
+              {showBalance ? formatCurrency(user.accountBalance) : `₦${hidden}`}
+            </p>
+
+            <button
+              onClick={copyAccount}
+              className="mt-5 inline-flex items-center gap-2 text-[14px] text-white/85 transition-colors hover:text-white"
+              aria-label="Copy account number"
+            >
+              <span>Account</span>
+              <span className="font-mono font-semibold text-white">{user.accountNumber}</span>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={copied ? 'ok' : 'copy'}
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex"
+                >
+                  {copied ? <Check size={15} className="text-accent" strokeWidth={3} /> : <Copy size={14} />}
+                </motion.span>
+              </AnimatePresence>
+            </button>
+
+            <div className="mt-8 grid grid-cols-4 gap-2 sm:gap-3">
+              {actions.map(({ label, icon: Icon, onClick }) => (
+                <button
+                  key={label === 'Copied' ? 'Receive' : label}
+                  onClick={onClick}
+                  className="group flex flex-col items-center gap-2 rounded-[18px] py-3 transition-colors hover:bg-white/[0.07] active:scale-[0.97]"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-[15px] bg-white/12 ring-1 ring-inset ring-white/15 transition-colors group-hover:bg-white/20">
+                    <Icon size={20} strokeWidth={2.1} />
+                  </span>
+                  <span className="text-center text-[12px] font-medium leading-tight text-white/90 sm:text-[13px]">
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Money flow */}
+          <Panel className="p-6">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-[17px] font-semibold tracking-[-0.015em] text-foreground">This month</h2>
+              <p className="text-[13px] text-muted-foreground">
+                {transactions.length} {transactions.length === 1 ? 'payment' : 'payments'}
+              </p>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-6">
+              <div>
+                <p className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-primary" /> Money in
+                </p>
+                <p className="mt-1.5 text-[1.75rem] font-bold leading-none tracking-[-0.03em] text-foreground tabular-nums">
+                  {showBalance ? formatCurrency(moneyIn) : `₦${hidden}`}
+                </p>
+              </div>
+              <div>
+                <p className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-accent" /> Money out
+                </p>
+                <p className="mt-1.5 text-[1.75rem] font-bold leading-none tracking-[-0.03em] text-foreground tabular-nums">
+                  {showBalance ? formatCurrency(moneyOut) : `₦${hidden}`}
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex h-2.5 gap-1 overflow-hidden rounded-full" aria-hidden>
+              <motion.span
+                className="h-full rounded-full bg-primary"
+                initial={false}
+                animate={{ width: `${inPct}%` }}
+                transition={{ duration: reduce ? 0 : 0.6, ease: [0.16, 1, 0.3, 1] }}
+              />
+              <span className="h-full flex-1 rounded-full bg-accent" />
+            </div>
+          </Panel>
+
+          {/* Activity */}
+          <section>
+            <SectionTitle title="Recent activity" action={{ label: 'See all', onClick: goToHistory }} />
+            {transactions.length === 0 ? (
+              <Panel>
+                <EmptyState
+                  icon={<ReceiptText size={22} strokeWidth={1.75} />}
+                  title="No activity yet"
+                  body="Your transfers and bill payments will show up here."
+                  action={
+                    <Button size="sm" icon={<ArrowUpRight />} onClick={() => setShowSendMoney(true)}>
+                      Make a transfer
+                    </Button>
+                  }
+                />
+              </Panel>
+            ) : (
+              <Panel className="overflow-hidden">
+                {Object.entries(grouped).map(([group, txs], gi) => (
+                  <div key={group} className={gi ? 'border-t border-card-border' : ''}>
+                    <p className="px-5 pb-1 pt-4 text-[13px] font-medium text-muted-foreground">{group}</p>
+                    <div className="divide-y divide-card-border/70">
+                      {txs.map((tx) => {
+                        const credit = tx.type === 'received' || tx.type === 'deposit'
+                        const s = txStatus(tx.status)
+                        return (
+                          <ListRow
+                            key={tx.id}
+                            leading={
+                              <IconTile
+                                tone={credit ? 'green' : tx.type === 'sent' ? 'neutral' : 'orange'}
+                                icon={
+                                  credit ? (
+                                    <ArrowDownLeft size={18} strokeWidth={2} />
+                                  ) : tx.type === 'sent' ? (
+                                    <ArrowUpRight size={18} strokeWidth={2} />
+                                  ) : (
+                                    <ReceiptText size={18} strokeWidth={2} />
+                                  )
+                                }
+                              />
+                            }
+                            title={tx.description}
+                            detail={<span className="font-mono">{tx.reference}</span>}
+                            trailing={
+                              <span className="flex flex-col items-end gap-1">
+                                <span
+                                  className={`text-[15px] font-semibold tabular-nums ${credit ? 'text-credit' : 'text-foreground'}`}
+                                >
+                                  {credit ? '+' : '−'}
+                                  {formatCurrency(tx.amount)}
+                                </span>
+                                <Status tone={s.tone} size="sm" dot>
+                                  {s.label}
+                                </Status>
+                              </span>
+                            }
+                          />
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </Panel>
+            )}
+          </section>
+        </div>
+
+        {/* ── Side column ─────────────────────────────── */}
+        <aside className="space-y-5 lg:space-y-6">
+          <section>
+            <SectionTitle title="Your card" action={{ label: 'Manage', onClick: () => setCurrentTab('cards') }} />
+            <div className="bank-card-gradient relative flex aspect-[1.586] w-full flex-col justify-between overflow-hidden rounded-[22px] p-5 text-white elevation-2">
+              <div className="flex items-start justify-between">
+                <span className="text-[15px] font-semibold tracking-[-0.01em]">PayXpress</span>
+                <Wifi size={18} className="rotate-90 text-white/80" />
+              </div>
+              <p className="font-mono text-[16px] tracking-[0.14em]">•••• •••• •••• 0123</p>
+              <div className="flex items-end justify-between text-[12px]">
+                <span className="font-medium text-white/90">{user.name}</span>
+                <span className="text-[14px] font-bold italic tracking-tight">VERVE</span>
+              </div>
+            </div>
+          </section>
+
+          <Panel className="p-5">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Ring value={setup} />
+                <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-foreground tabular-nums">
+                  {setup}%
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold text-foreground">Finish setting up</p>
+                <p className="mt-0.5 text-[13px] leading-[1.4] text-muted-foreground">
+                  Verify your details to raise your limits.
+                </p>
+              </div>
+            </div>
+            <Button variant="secondary" size="sm" className="mt-4 w-full" onClick={() => setCurrentTab('profile')}>
+              Continue setup
+            </Button>
+          </Panel>
+
+          {recentContacts.length > 0 && (
+            <section>
+              <SectionTitle title="Send again" action={{ label: 'New', onClick: () => setShowSendMoney(true) }} />
+              <Panel className="overflow-hidden">
+                <div className="divide-y divide-card-border/70">
+                  {recentContacts.map((c) => (
+                    <ListRow
+                      key={c.id}
+                      onClick={() => setShowSendMoney(true)}
+                      leading={
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-tint text-[13px] font-semibold text-primary">
+                          {initialsOf(c.name)}
+                        </span>
+                      }
+                      title={c.name}
+                      detail={c.bankName}
+                      trailing={<span className="text-muted-foreground">›</span>}
+                    />
+                  ))}
+                </div>
+              </Panel>
+            </section>
+          )}
+        </aside>
+      </div>
+    </div>
+  )
 }

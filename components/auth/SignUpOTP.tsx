@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { OtpInput, OtpInputHandle } from '@/components/auth/OtpInput'
-import { Loader2, ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from 'lucide-react'
+import { Spinner } from '@/components/app/kit'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 const RESEND_SECONDS = 60
@@ -89,10 +90,10 @@ export function SignUpOTP() {
       <div className="space-y-8">
         {/* Heading */}
         <motion.div {...rise(0.05)} className="space-y-3">
-          <h1 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="type-title-1 text-foreground">
             Check your inbox
           </h1>
-          <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
+          <p className="type-body text-muted-foreground">
             We sent a 6-digit code to{' '}
             <span className="font-semibold text-foreground">{maskedEmail}</span>
           </p>
@@ -120,7 +121,7 @@ export function SignUpOTP() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="rounded-xl bg-destructive/10 px-4 py-3 text-center text-sm font-medium text-destructive"
+              className="rounded-[14px] bg-destructive-tint px-4 py-3 text-center text-sm font-medium text-destructive"
             >
               {error}
             </motion.div>
@@ -153,9 +154,9 @@ export function SignUpOTP() {
             disabled={otp.join('').length !== 6 || loading}
             whileHover={reduce || loading ? undefined : { scale: 1.01 }}
             whileTap={reduce || loading ? undefined : { scale: 0.98 }}
-            className="flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground elevation-1"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] bg-primary text-[17px] font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground disabled:shadow-none"
           >
-            {loading && <Loader2 size={18} className="animate-spin" />}
+            {loading && <Spinner size={18} />}
             {loading ? 'Verifying…' : 'Verify'}
           </motion.button>
         </motion.div>
@@ -163,10 +164,10 @@ export function SignUpOTP() {
         {/* Help card */}
         <motion.div
           {...rise(0.32)}
-          className="flex items-start gap-3 rounded-2xl bg-primary-tint/60 p-4"
+          className="flex items-start gap-3 rounded-[16px] bg-primary-tint/70 p-4"
         >
           <ShieldCheck size={17} className="mt-0.5 flex-shrink-0 text-primary" />
-          <p className="text-xs leading-relaxed text-muted-foreground">
+          <p className="text-[13px] leading-[1.5] text-muted-foreground">
             The code expires in 15 minutes. If you don&apos;t see it, check your spam folder.
           </p>
         </motion.div>

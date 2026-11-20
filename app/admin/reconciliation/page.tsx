@@ -53,7 +53,7 @@ export default function ReconciliationPage() {
     return (
       <div className="flex animate-pulse flex-col gap-4">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-36 rounded-2xl border border-card-border bg-card" />
+          <div key={i} className="h-36 rounded-[22px] border border-card-border/80 bg-card" />
         ))}
       </div>
     )
@@ -61,7 +61,7 @@ export default function ReconciliationPage() {
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+      <div className="flex items-center gap-2 rounded-[12px] border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
         <AlertTriangle size={16} /> {error}
       </div>
     )
@@ -69,7 +69,7 @@ export default function ReconciliationPage() {
 
   if (queue.length === 0) {
     return (
-      <div className="animate-fade-up flex flex-col items-center justify-center rounded-2xl border border-card-border bg-card px-6 py-20 text-center elevation-1">
+      <div className="animate-fade-up flex flex-col items-center justify-center rounded-[22px] border border-card-border/80 bg-card px-6 py-20 text-center elevation-1">
         <span className="pulse-soft flex h-16 w-16 items-center justify-center rounded-full bg-primary-tint text-primary">
           <ShieldCheck size={28} strokeWidth={2} />
         </span>
@@ -97,7 +97,7 @@ export default function ReconciliationPage() {
           <div
             key={tx.id}
             style={{ animationDelay: `${i * 70}ms` }}
-            className={`animate-fade-up rounded-2xl border bg-card p-5 elevation-1 transition-all duration-500 ${
+            className={`animate-fade-up rounded-[22px] border bg-card p-5 elevation-1 transition-all duration-500 ${
               doneStatus ? 'translate-x-3 border-primary/40 opacity-0' : 'border-l-4 border-card-border border-l-warning'
             }`}
           >
@@ -106,7 +106,7 @@ export default function ReconciliationPage() {
                 <CategoryIcon category={tx.billerCategoryPath} />
                 <div>
                   <p className="text-sm font-bold text-foreground">{tx.billerUniqueCode ?? 'Transaction'}</p>
-                  <p className="font-mono text-xs text-muted-foreground">
+                  <p className="font-mono text-[13px] text-muted-foreground">
                     {tx.paystackReference ?? tx.id}
                   </p>
                 </div>
@@ -128,15 +128,15 @@ export default function ReconciliationPage() {
 
             <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
               <div>
-                <p className="text-xs text-muted-foreground">User</p>
+                <p className="text-[13px] text-muted-foreground">User</p>
                 <p className="font-semibold text-foreground">{tx.userEmail ?? '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Payment method</p>
+                <p className="text-[13px] text-muted-foreground">Payment method</p>
                 <p className="font-semibold text-foreground">{tx.paymentMethod ?? '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Initiated</p>
+                <p className="text-[13px] text-muted-foreground">Initiated</p>
                 <p className="font-semibold text-foreground">
                   {formatDateTime(tx.createdAt)} · {timeAgo(tx.createdAt)}
                 </p>
@@ -144,7 +144,7 @@ export default function ReconciliationPage() {
             </div>
 
             {rowError[tx.id] && (
-              <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+              <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-[13px] font-medium text-destructive">
                 {rowError[tx.id]}
               </p>
             )}

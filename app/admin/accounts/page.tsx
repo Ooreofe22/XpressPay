@@ -37,12 +37,12 @@ export default function AccountsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by email"
-          className="w-full rounded-xl border border-border bg-card py-2.5 pr-3 pl-9 text-sm outline-none focus:border-primary"
+          className="w-full rounded-[12px] border border-border bg-card py-2.5 pr-3 pl-9 text-sm outline-none focus:border-primary"
         />
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+        <div className="flex items-center gap-2 rounded-[12px] border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -50,10 +50,10 @@ export default function AccountsPage() {
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading accounts…</p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-card-border bg-card elevation-1">
+        <div className="overflow-hidden rounded-[22px] border border-card-border/80 bg-card elevation-1">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-secondary/40 text-left text-xs font-semibold text-muted-foreground">
+              <tr className="border-b border-border bg-secondary/40 text-left text-[13px] font-semibold text-muted-foreground">
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Balance</th>
                 <th className="px-4 py-3">Status</th>
@@ -84,7 +84,7 @@ export default function AccountsPage() {
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/admin/accounts/${a.id}`}
-                      className="text-xs font-semibold text-primary hover:underline"
+                      className="text-[13px] font-semibold text-primary hover:underline"
                     >
                       View
                     </Link>

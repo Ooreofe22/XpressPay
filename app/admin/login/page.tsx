@@ -34,35 +34,35 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-5">
-      <div className="w-full max-w-sm animate-fade-up rounded-2xl border border-card-border bg-card p-6 elevation-1">
+      <div className="w-full max-w-sm animate-fade-up rounded-[22px] border border-card-border/80 bg-card p-6 elevation-1">
         <div className="mb-5 flex items-center gap-3">
           <span className="balance-gradient flex h-10 w-10 items-center justify-center rounded-full text-white elevation-1">
             <ShieldCheck size={18} />
           </span>
           <div>
             <h1 className="text-[15px] font-bold text-foreground">Admin access</h1>
-            <p className="text-xs text-muted-foreground">Restricted to allowlisted PayXpress staff</p>
+            <p className="text-[13px] text-muted-foreground">Restricted to allowlisted PayXpress staff</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">Admin key</label>
+            <label className="mb-1 block text-[13px] font-medium text-muted-foreground">Admin key</label>
             <input
               type="password"
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              className="w-full rounded-xl border border-border bg-secondary/40 px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+              className="w-full rounded-[12px] border border-border bg-secondary/40 px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"
               placeholder="X-Admin-Key"
               autoFocus
             />
           </div>
 
-          {error && <p className="text-xs font-medium text-destructive">{error}</p>}
+          {error && <p className="text-[13px] font-medium text-destructive">{error}</p>}
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+            className="w-full rounded-[12px] bg-primary py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
           >
             Continue
           </button>

@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react'
 import { useApp } from '@/context/AppContext'
 import { AuthLayout } from '@/components/auth/AuthLayout'
-import { Loader2 } from 'lucide-react'
+import { Spinner } from '@/components/app/kit'
 
 // Shared final step for BOTH signup and login — reached from SignUpOTP after a
 // real account is created, and from LoginOTPScreen after a real login. The
@@ -67,7 +67,7 @@ export function WelcomeBackScreen() {
               {initials}
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              <h1 className="type-title-1 text-foreground">
                 {isSettingNewPin ? 'Create a PIN' : 'Welcome back'}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
@@ -77,7 +77,7 @@ export function WelcomeBackScreen() {
               </p>
               <button
                   onClick={() => setAuthScreen('splash')}
-                  className="text-xs text-primary font-medium hover:underline mt-2 transition-colors"
+                  className="text-[13px] text-primary font-medium hover:underline mt-2 transition-colors"
               >
                 Not your account? Log out
               </button>
@@ -100,7 +100,7 @@ export function WelcomeBackScreen() {
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     disabled={loading}
                     aria-label={`PIN digit ${index + 1}`}
-                    className={`w-14 h-16 text-center text-2xl font-bold rounded-xl border-2 text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
+                    className={`w-14 h-16 text-center text-2xl font-bold rounded-[14px] border-[1.5px] text-foreground transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 ${
                         digit ? 'border-primary bg-primary-tint' : 'border-card-border bg-background'
                     }`}
                 />
@@ -109,19 +109,19 @@ export function WelcomeBackScreen() {
 
           {loading && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 size={16} className="animate-spin" />
+                <Spinner size={16} />
                 <span>Signing you in…</span>
               </div>
           )}
 
           {error && (
-              <div className="text-sm text-destructive font-medium text-center bg-destructive/10 px-4 py-2.5 rounded-lg">
+              <div className="text-sm text-destructive font-medium text-center bg-destructive-tint px-4 py-3 rounded-[14px]">
                 {error}
               </div>
           )}
 
           {isSettingNewPin && (
-              <p className="text-xs text-muted-foreground text-center max-w-xs -mt-2">
+              <p className="text-[13px] text-muted-foreground text-center max-w-xs -mt-2">
                 You&apos;ll use this PIN to unlock PayXpress on this device next time
               </p>
           )}
