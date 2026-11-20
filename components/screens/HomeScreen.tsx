@@ -21,6 +21,8 @@ import {
 } from 'lucide-react'
 import { SendMoneyScreen } from '@/components/screens/SendMoneyScreen'
 import { formatCurrency } from '@/lib/utils'
+import { Status } from '@/components/ui/Status'
+import { txStatus } from '@/lib/txStatus'
 
 function formatDateGroup(dateStr: string): string {
     const date = new Date(dateStr)
@@ -295,9 +297,9 @@ export function HomeScreen() {
                                                                 {amountPrefix}
                                                                 {formatCurrency(tx.amount)}
                                                             </p>
-                                                            <span className="text-[11px] font-medium text-credit capitalize">
-                                {tx.status}
-                              </span>
+                                                            <Status tone={txStatus(tx.status).tone} size="sm" dot>
+                                                                {txStatus(tx.status).label}
+                                                            </Status>
                                                         </div>
                                                     </div>
                                                 )
