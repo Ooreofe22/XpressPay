@@ -17,6 +17,15 @@ export function SplashScreen() {
 
   return (
     <div className="min-h-screen splash-gradient relative overflow-hidden">
+      {/* Faint orbital accents */}
+      <div
+        aria-hidden
+        className="absolute -right-40 -top-40 w-[32rem] h-[32rem] rounded-full border border-white/10"
+      />
+      <div
+        aria-hidden
+        className="absolute -left-32 bottom-0 w-[28rem] h-[28rem] rounded-full border border-white/10"
+      />
       {/* Hero */}
       <main className="relative max-w-6xl mx-auto px-6 sm:px-10 flex flex-col items-center text-center pt-10 sm:pt-16 pb-16">
         <div className="animate-fade-up flex flex-col items-center">

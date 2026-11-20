@@ -39,6 +39,7 @@ export function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => 
         <Link href="/admin" className="flex items-center gap-2.5" aria-label="PayXpress admin home">
           <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-white/12 ring-1 ring-white/20">
             <ArrowUpRight size={18} className="text-white" strokeWidth={2.75} />
+            <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full bg-accent ring-2 ring-primary-deep" />
           </span>
           <span className="text-[17px] font-bold tracking-tight">PayXpress</span>
           <Status tone="onBrand" size="sm" className="border-l border-white/25 pl-2.5">

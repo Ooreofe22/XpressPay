@@ -149,6 +149,58 @@
   --shadow-color: 0 0% 0%;
 }
 
+/*
+ * App palette. Wraps every route except the landing page (see the
+ * layouts in app/app, app/admin, app/receipt and app/bills). Brings back the
+ * green-tinted neutrals and the orange accent the product was designed with.
+ */
+.app-surface {
+  --background: #f4f7f5;
+  --foreground: #14201b;
+  --card: #ffffff;
+  --card-foreground: #14201b;
+  --card-border: #e2e8e4;
+  --secondary: #ecf1ee;
+  --secondary-foreground: #14201b;
+  --muted: #ecf1ee;
+  /* 5.3:1 on the page, 5.8:1 on white */
+  --muted-foreground: #58665f;
+  --border: #e2e8e4;
+
+  --primary-tint: #e3f2eb;
+  --accent: #f97316;
+  --accent-foreground: #ffffff;
+  --accent-tint: #fff1e6;
+  --warning: #c2410c;
+  --warning-tint: #fff1e6;
+
+  --shadow-color: 155 25% 12%;
+}
+
+.dark .app-surface {
+  --background: #08100d;
+  --foreground: #eef4f1;
+  --card: #111b17;
+  --card-foreground: #eef4f1;
+  --card-border: #20302a;
+  --secondary: #182621;
+  --secondary-foreground: #eef4f1;
+  --muted: #182621;
+  /* 7.4:1 on the page, 6.8:1 on cards */
+  --muted-foreground: #9fb0a8;
+  --border: #20302a;
+  --input: #14201b;
+
+  --primary-tint: rgba(46, 196, 138, 0.16);
+  --accent: #fb923c;
+  --accent-foreground: #1c0a00;
+  --accent-tint: rgba(251, 146, 60, 0.16);
+  --warning: #fb923c;
+  --warning-tint: rgba(251, 146, 60, 0.16);
+
+  --shadow-color: 0 0% 0%;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -244,13 +296,25 @@
 
   /* Brand surfaces used inside the app (balance card, splash, bank card) */
   .balance-gradient {
-    background: linear-gradient(150deg, #0b6e4f 0%, #084c37 60%, #06382a 100%);
+    background:
+      radial-gradient(120% 140% at 85% -10%, rgba(47, 155, 115, 0.55) 0%, rgba(47, 155, 115, 0) 55%),
+      radial-gradient(80% 90% at 0% 110%, rgba(249, 115, 22, 0.16) 0%, rgba(249, 115, 22, 0) 60%),
+      linear-gradient(150deg, #0b6e4f 0%, #084c37 60%, #06382a 100%);
   }
   .splash-gradient {
-    background: linear-gradient(165deg, #0b6e4f 0%, #084c37 55%, #06382a 100%);
+    background:
+      radial-gradient(100% 80% at 80% 0%, rgba(47, 155, 115, 0.4) 0%, rgba(47, 155, 115, 0) 60%),
+      radial-gradient(70% 60% at 10% 100%, rgba(249, 115, 22, 0.14) 0%, rgba(249, 115, 22, 0) 60%),
+      linear-gradient(165deg, #0b6e4f 0%, #084c37 55%, #06382a 100%);
   }
+  /* Landing keeps the flat card face; the app gets the original glow */
   .bank-card-gradient {
     background: linear-gradient(135deg, #16231f 0%, #0b3326 50%, #0b4a36 100%);
+  }
+  .app-surface .bank-card-gradient {
+    background:
+      radial-gradient(140% 120% at 100% 0%, rgba(47, 155, 115, 0.5) 0%, rgba(47, 155, 115, 0) 55%),
+      linear-gradient(135deg, #0e2620 0%, #06382a 45%, #084c37 100%);
   }
   .card-gradient {
     background: var(--card);

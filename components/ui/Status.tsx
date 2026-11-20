@@ -10,8 +10,8 @@ import React from 'react'
  *   danger    failed, suspended
  *   onBrand   on a green or dark brand surface
  *
- * The marker is the colour; the label stays high contrast text so it is
- * readable at small sizes in both themes.
+ * Marker and label share the tone colour; every tone keeps at least 4.5:1
+ * contrast on cards in both themes.
  */
 export type StatusTone = 'neutral' | 'positive' | 'warning' | 'danger' | 'onBrand'
 
@@ -25,9 +25,9 @@ const marker: Record<StatusTone, string> = {
 
 const label: Record<StatusTone, string> = {
   neutral: 'text-muted-foreground',
-  positive: 'text-foreground',
-  warning: 'text-foreground',
-  danger: 'text-foreground',
+  positive: 'text-primary',
+  warning: 'text-warning',
+  danger: 'text-destructive',
   onBrand: 'text-white/90',
 }
 
