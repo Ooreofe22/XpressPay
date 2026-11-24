@@ -1,241 +1,84 @@
-# PayXpress - Mobile Banking App
+# PayXpress Web
 
-A comprehensive Nigerian fintech mobile banking application built with Next.js 16, React 19, and Tailwind CSS. PayXpress provides a seamless experience for money transfers, bill payments, card management, and account management.
+The web app for **PayXpress**, a Nigerian bill payments and wallet app.
+Live at **[paypei.online](https://paypei.online)**.
+
+Users sign up with a one time code, fund a wallet, and pay for airtime, data, electricity, cable TV and exam PINs. Payments go through Paystack checkout, and every payment gets a shareable receipt. An admin dashboard lets staff watch transactions, manage billers and reconcile payments.
+
+The API lives in a separate repo: [xpressPay-backend](https://github.com/Ooreofe22/xpressPay-backend) (Java, Spring Boot).
 
 ## Features
 
-### 5 Main Tabs
-- **Home**: Account balance, quick actions, recent transactions
-- **Send**: Money transfer with saved contacts
-- **Pay**: Bill payments (Airtime, Data, Cable, Electricity, Betting)
-- **Cards**: Debit/Credit card management with CVV display
-- **More**: Settings, profile, KYC upgrades, support
+**Customer app**
+- Sign up and log in with phone or email plus a one time code, then a 4 digit passcode
+- Wallet balance, recent transactions and a search screen
+- Bill payments: airtime, data, electricity, cable TV and exam PINs, with customer validation before you pay
+- Paystack checkout with a callback page that confirms the payment with the server
+- Receipt page for every payment (`/receipt/[id]`)
+- Saved beneficiaries for repeat payments
 
-### Core Functionality
-- **Authentication**: Secure 4-digit passcode login (demo: 1234)
-- **Balance Management**: Real-time account balance with visibility toggle
-- **Money Transfer**: Multi-step transfer flow with confirmation and receipt
-- **Bill Payments**: Quick access to 5+ VAS providers
-- **Card Management**: Display card details with copy/share functionality
-- **Transaction History**: Complete transaction tracking with status
-- **KYC Levels**: Bronze, Silver, Gold tier verification system
+**Admin dashboard** (`/admin`)
+- Separate admin login
+- Overview stats, transactions list and customer accounts
+- Biller catalogue management
+- Reconciliation view to find payments that did not complete
 
-### Design Features
-- Dark mode optimized UI with purple accent (#7C3AED)
-- Mobile-first responsive design (390px optimized)
-- Smooth animations and transitions
-- Accessibility-compliant components
-- Nigeria-focused localization (NGN currency, banks, providers)
+**Landing page** with product showcase and a live transfer demo.
 
-## Tech Stack
+## Tech stack
 
-- **Framework**: Next.js 16 (App Router)
-- **UI**: React 19.2.4
-- **Styling**: Tailwind CSS v4
-- **Icons**: Lucide React
-- **State Management**: React Context API
-- **Fonts**: Geist Sans/Mono via next/font
+| Area | Tools |
+|---|---|
+| Framework | Next.js 16 (App Router), React 19, TypeScript |
+| Styling | Tailwind CSS 4, shadcn style components |
+| State | React Context |
+| Payments | Paystack (through the backend) |
+| Hosting | Vercel (web), Render (API) |
 
-## Project Structure
+## Project structure
 
 ```
-├── app/
-│   ├── layout.tsx           # Root layout with AppProvider
-│   ├── page.tsx             # Main app entry point
-│   └── globals.css          # Design system tokens
-├── components/
-│   ├── auth/                # Login, KYC, Splash screens
-│   ├── layout/              # Header, Navigation
-│   ├── screens/             # Home, Send, Bills, Cards, More
-│   ├── ui/                  # Button, Card, Input, Avatar, Badge
-│   └── layout/              # BottomNavigation
-├── context/
-│   └── AppContext.tsx       # Global state management
-├── types/
-│   └── index.ts             # TypeScript interfaces
-└── lib/
-    └── utils.ts             # Utility functions
+app/
+  page.tsx            landing page
+  app/                customer app (after login)
+  bills/              bill payment flow and Paystack callback
+  receipt/[id]/       payment receipts
+  admin/              admin dashboard
+components/
+  auth/               sign up, login, OTP and passcode screens
+  screens/            home, send, bills, cards, profile
+  bills/              bill payment flow
+  admin/              dashboard widgets
+  marketing/          landing page sections
+lib/
+  api.ts              API client
+  auth-api.ts         auth calls
+  admin-api.ts        admin calls
+context/              app state
+docs/                 design notes and integration docs
 ```
 
-## Installation
+## Run locally
 
-### Using Shadcn CLI (Recommended)
+You need Node 20+ and the backend running (see the backend repo).
+
 ```bash
-npx shadcn-cli@latest init --preset payxpress-fintech
-```
-
-### Manual Setup
-```bash
-# Install dependencies
+cp .env.local.example .env.local   # set NEXT_PUBLIC_API_BASE_URL
 pnpm install
-
-# Run development server
 pnpm dev
-
-# Build for production
-pnpm build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+Open http://localhost:3000.
 
-## Demo Credentials
+## Environment variables
 
-- **Passcode**: `1234`
-- **User**: Chukwu Okafor
-- **Account Balance**: ₦450,000
-- **KYC Level**: GOLD
+| Name | What it is |
+|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | URL of the PayXpress API, for example `http://localhost:8080` |
 
-## Key Screens
+Real values live in `.env.local`, which is git ignored. Never commit keys.
 
-### 1. Login Screen
-- 4-digit passcode input with visual feedback
-- Demo credentials clearly displayed
-- Security messaging
+## Author
 
-### 2. Home Dashboard
-- Account balance with eye icon toggle
-- Quick action buttons (Send, Pay, Add Money, Withdraw)
-- Recent transactions list with status
-- Account info and KYC level badge
-
-### 3. Send Money
-- Contact search and selection
-- Multi-step flow: Select → Amount → Confirm
-- Transaction confirmation with all details
-- Success receipt modal
-
-### 4. Pay Bills
-- 5 service categories (Airtime, Data, Cable, TV, Betting)
-- Provider selection for each service
-- Amount and ID input
-- Confirmation before payment
-
-### 5. Cards Management
-- Card display with masked number
-- CVV visibility toggle
-- Card copy functionality
-- Active/Inactive status
-- Recent card transactions
-
-### 6. More / Settings
-- User profile summary
-- Menu items for settings, support, legal
-- Account statements access
-- KYC upgrade option
-- Logout functionality
-
-## Design System
-
-### Color Palette
-- **Background**: #0D0D0D
-- **Primary**: #7C3AED (Purple)
-- **Cards**: #1A1A1A
-- **Borders**: #2A2A2A
-- **Success**: #10B981
-- **Warning**: #F59E0B
-- **Danger**: #EF4444
-
-### Typography
-- **Heading Font**: Geist Sans (Bold, 600-700 weight)
-- **Body Font**: Geist Sans (Regular, 400 weight)
-- **Line Height**: 1.4-1.6 (relaxed)
-
-### Components
-- Custom buttons with 4 variants (primary, secondary, ghost, danger)
-- Card system with gradient support
-- Input fields with icons and validation
-- Avatar with fallback initials
-- Badge component with multiple styles
-- Passcode input with auto-focus
-
-## State Management
-
-The app uses React Context API (`AppContext`) for global state:
-
-```typescript
-- user: User | null
-- isAuthenticated: boolean
-- transactions: Transaction[]
-- bankContacts: BankContact[]
-- cards: Card[]
-- currentTab: 'home' | 'send' | 'pay' | 'cards' | 'more'
-```
-
-## Mock Data
-
-All data is provided via context and persists during the session:
-
-- **Users**: Pre-populated with demo user (Chukwu Okafor)
-- **Transactions**: Sample transactions with various types and statuses
-- **Contacts**: Pre-saved bank contacts for quick transfers
-- **Cards**: Single debit card with transaction history
-
-## Responsive Design
-
-The app is optimized for mobile-first design:
-- **Mobile**: 390px (primary target)
-- **Tablet**: 768px and above
-- **Desktop**: 1024px and above
-
-All touch targets are ≥44px for accessibility.
-
-## Accessibility
-
-- Semantic HTML elements throughout
-- ARIA labels and roles
-- Keyboard navigation support
-- Color contrast compliance
-- Screen reader friendly
-- Proper heading hierarchy
-
-## Performance Optimizations
-
-- Image optimization with Next.js Image
-- CSS-in-JS with Tailwind for small bundle
-- Component code splitting
-- Lazy loading for modal components
-- CSS animations with GPU acceleration
-
-## Future Enhancements
-
-- Real backend API integration
-- Biometric authentication
-- Real-time notifications
-- Transaction scheduling
-- Budget tracking and analytics
-- Multiple account support
-- International transfers
-- Investment features
-
-## Deployment
-
-### Deploy to Vercel (Recommended)
-```bash
-vercel
-```
-
-### Deploy to Other Platforms
-```bash
-pnpm build
-# Deploy the .next folder
-```
-
-## Browser Support
-
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-- Mobile Safari 14+
-
-## License
-
-MIT License - feel free to use this project for learning and commercial purposes.
-
-## Support
-
-For issues, feature requests, or contributions, please create an issue or pull request on GitHub.
-
----
-
-Built with care for the Nigerian fintech ecosystem. Fast, secure, and beautiful mobile banking.
+**Ooreofeoluwa Popoola**, full stack software engineer (backend focused).
+[LinkedIn](https://www.linkedin.com/in/ooreofeoluwa-popoola-8260ba3b4/) · [GitHub](https://github.com/Ooreofe22)
