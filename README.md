@@ -81,4 +81,4 @@ Real values live in `.env.local`, which is git ignored. Never commit keys.
 ## Author
 
 **Ooreofeoluwa Popoola**, full stack software engineer (backend focused).
-[LinkedIn](https://www.linkedin.com/in/ooreofeoluwa-popoola-8260ba3b4/) · [GitHub](https://github.com/Ooreofe22)
+[Portfolio](https://ooreofepopoola.dev) · [LinkedIn](https://www.linkedin.com/in/ooreofeoluwa-popoola-8260ba3b4/) · [GitHub](https://github.com/Ooreofe22)
